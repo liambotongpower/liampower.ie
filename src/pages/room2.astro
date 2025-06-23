@@ -4,7 +4,7 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Liam Power</title>
+		<title>Room 2 - Liam Power</title>
 		<style>
 			/* Reset default browser margins and prevent scrollbars */
 			body,
@@ -32,7 +32,7 @@
 			/* Base style for all buttons */
 			.image-button {
 				position: absolute; /* Position relative to the container */
-				border: 0px
+				border: 0px;
 				font-size: 16px; /* Text size */
 				cursor: pointer; /* Hand cursor on hover */
 				transition: all 0.3s ease; /* Smooth animation for hover effects */
@@ -51,39 +51,40 @@
 				display: var(--button-display);
 			}
 			
-			/* Individual button positioning */
-			#button1 {
-				top: 7%;
-				left: 3%;
-				--button-width: 24.5%;
-				--button-height: 7%;
+			/* Room 2 specific button positioning - completely different layout */
+			#room2-button1 {
+				top: 5%;
+				left: 5%;
+				--button-width: 25%;
+				--button-height: 5%;
 				--button-opacity: 0%;
 			}
 			
-			#button2 {
-				top: 8%;
-				left: 48%;
-				--button-width: 16.5%;
-				--button-height: 6%;
+			#room2-button2 {
+				top: 5%;
+				right: 5%;
+				--button-width: 25%;
+				--button-height: 5%;
 				--button-opacity: 0%;
 			}
 			
-			#button3 {
-				top: 8%;
-				left: 67%;
-				--button-width: 14%;
-				--button-height: 7%;
+			#room2-button3 {
+				bottom: 10%;
+				left: 50%;
+				transform: translateX(-50%);
+				--button-width: 30%;
+				--button-height: 8%;
 				--button-opacity: 0%;
 			}
-
-			#button4 {
-				top: 8%;
-				left: 83.5%;
-				--button-width: 13.5%;
-				--button-height: 6%;
+			
+			#room2-button4 {
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				--button-width: 20%;
+				--button-height: 15%;
 				--button-opacity: 0%;
 			}
-
 		</style>
 	</head>
 	<body>
@@ -92,15 +93,15 @@
 			<!-- Background image that fills the entire viewport -->
 			<img
 				id="background-image"
-				src="/room_1920x1080_Improved_labels.png"
-				alt="Background image"
+				src="/room_1920x1080.png"
+				alt="Room 2 background"
 			/>
 			
-			<!-- Multiple buttons for different images -->
-			<button class="image-button" id="button1" data-image="/room_1920x1080_Improved_labels.png"></button>
-			<button class="image-button" id="button2" data-image="/room_1920x1080.png"></button>
-			<button class="image-button" id="button3" data-image="/room_1920x1080 copy.png"></button>
-			<button class="image-button" id="button4" data-image="/placeholder.png"></button>
+			<!-- Room 2 specific buttons with different layout -->
+			<button class="image-button" id="room2-button1" data-image="/room_1920x1080_Improved_labels.png"></button>
+			<button class="image-button" id="room2-button2" data-image="/room_1920x1080 copy.png"></button>
+			<button class="image-button" id="room2-button3" data-image="/placeholder.png"></button>
+			<button class="image-button" id="room2-button4" data-image="/room_1920x1080.png"></button>
 		</div>
 
 		<script>
@@ -125,4 +126,4 @@
 			});
 		</script>
 	</body>
-</html>
+</html> 

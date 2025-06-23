@@ -4,7 +4,7 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Liam Power</title>
+		<title>Room 1 - Liam Power</title>
 		<style>
 			/* Reset default browser margins and prevent scrollbars */
 			body,
@@ -32,7 +32,7 @@
 			/* Base style for all buttons */
 			.image-button {
 				position: absolute; /* Position relative to the container */
-				border: 0px
+				border: 0px;
 				font-size: 16px; /* Text size */
 				cursor: pointer; /* Hand cursor on hover */
 				transition: all 0.3s ease; /* Smooth animation for hover effects */
@@ -51,39 +51,30 @@
 				display: var(--button-display);
 			}
 			
-			/* Individual button positioning */
-			#button1 {
-				top: 7%;
-				left: 3%;
-				--button-width: 24.5%;
-				--button-height: 7%;
+			/* Room 1 specific button positioning */
+			#room1-button1 {
+				top: 15%;
+				left: 10%;
+				--button-width: 20%;
+				--button-height: 8%;
 				--button-opacity: 0%;
 			}
 			
-			#button2 {
-				top: 8%;
-				left: 48%;
-				--button-width: 16.5%;
-				--button-height: 6%;
+			#room1-button2 {
+				top: 25%;
+				left: 60%;
+				--button-width: 15%;
+				--button-height: 10%;
 				--button-opacity: 0%;
 			}
 			
-			#button3 {
-				top: 8%;
-				left: 67%;
-				--button-width: 14%;
-				--button-height: 7%;
+			#room1-button3 {
+				top: 45%;
+				left: 20%;
+				--button-width: 18%;
+				--button-height: 12%;
 				--button-opacity: 0%;
 			}
-
-			#button4 {
-				top: 8%;
-				left: 83.5%;
-				--button-width: 13.5%;
-				--button-height: 6%;
-				--button-opacity: 0%;
-			}
-
 		</style>
 	</head>
 	<body>
@@ -93,14 +84,13 @@
 			<img
 				id="background-image"
 				src="/room_1920x1080_Improved_labels.png"
-				alt="Background image"
+				alt="Room 1 background"
 			/>
 			
-			<!-- Multiple buttons for different images -->
-			<button class="image-button" id="button1" data-image="/room_1920x1080_Improved_labels.png"></button>
-			<button class="image-button" id="button2" data-image="/room_1920x1080.png"></button>
-			<button class="image-button" id="button3" data-image="/room_1920x1080 copy.png"></button>
-			<button class="image-button" id="button4" data-image="/placeholder.png"></button>
+			<!-- Room 1 specific buttons -->
+			<button class="image-button" id="room1-button1" data-image="/room_1920x1080.png">Button 1</button>
+			<button class="image-button" id="room1-button2" data-image="/room_1920x1080 copy.png">Button 2</button>
+			<button class="image-button" id="room1-button3" data-image="/placeholder.png">Button 3</button>
 		</div>
 
 		<script>
@@ -125,4 +115,4 @@
 			});
 		</script>
 	</body>
-</html>
+</html> 

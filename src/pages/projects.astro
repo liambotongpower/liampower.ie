@@ -4,7 +4,7 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Liam Power</title>
+		<title>Projects - Liam Power</title>
 		<style>
 			/* Reset default browser margins and prevent scrollbars */
 			body,
@@ -32,7 +32,7 @@
 			/* Base style for all buttons */
 			.image-button {
 				position: absolute; /* Position relative to the container */
-				border: 0px
+				border: 0px;
 				font-size: 16px; /* Text size */
 				cursor: pointer; /* Hand cursor on hover */
 				transition: all 0.3s ease; /* Smooth animation for hover effects */
@@ -51,39 +51,46 @@
 				display: var(--button-display);
 			}
 			
-			/* Individual button positioning */
-			#button1 {
-				top: 7%;
-				left: 3%;
-				--button-width: 24.5%;
-				--button-height: 7%;
+			/* Projects specific button positioning */
+			#projects-button1 {
+				top: 10%;
+				left: 15%;
+				--button-width: 20%;
+				--button-height: 8%;
 				--button-opacity: 0%;
 			}
 			
-			#button2 {
-				top: 8%;
-				left: 48%;
-				--button-width: 16.5%;
-				--button-height: 6%;
+			#projects-button2 {
+				top: 10%;
+				left: 45%;
+				--button-width: 20%;
+				--button-height: 8%;
 				--button-opacity: 0%;
 			}
 			
-			#button3 {
-				top: 8%;
-				left: 67%;
-				--button-width: 14%;
-				--button-height: 7%;
+			#projects-button3 {
+				top: 10%;
+				left: 75%;
+				--button-width: 20%;
+				--button-height: 8%;
 				--button-opacity: 0%;
 			}
-
-			#button4 {
-				top: 8%;
-				left: 83.5%;
-				--button-width: 13.5%;
-				--button-height: 6%;
+			
+			#projects-button4 {
+				top: 25%;
+				left: 30%;
+				--button-width: 15%;
+				--button-height: 10%;
 				--button-opacity: 0%;
 			}
-
+			
+			#projects-button5 {
+				top: 25%;
+				left: 55%;
+				--button-width: 15%;
+				--button-height: 10%;
+				--button-opacity: 0%;
+			}
 		</style>
 	</head>
 	<body>
@@ -92,15 +99,16 @@
 			<!-- Background image that fills the entire viewport -->
 			<img
 				id="background-image"
-				src="/room_1920x1080_Improved_labels.png"
-				alt="Background image"
+				src="/room_1920x1080.png"
+				alt="Projects background"
 			/>
 			
-			<!-- Multiple buttons for different images -->
-			<button class="image-button" id="button1" data-image="/room_1920x1080_Improved_labels.png"></button>
-			<button class="image-button" id="button2" data-image="/room_1920x1080.png"></button>
-			<button class="image-button" id="button3" data-image="/room_1920x1080 copy.png"></button>
-			<button class="image-button" id="button4" data-image="/placeholder.png"></button>
+			<!-- Projects specific buttons -->
+			<button class="image-button" id="projects-button1" data-image="/room_1920x1080_Improved_labels.png"></button>
+			<button class="image-button" id="projects-button2" data-image="/room_1920x1080 copy.png"></button>
+			<button class="image-button" id="projects-button3" data-image="/placeholder.png"></button>
+			<button class="image-button" id="projects-button4" data-image="/room_1920x1080.png"></button>
+			<button class="image-button" id="projects-button5" data-image="/room_1920x1080_Improved_labels.png"></button>
 		</div>
 
 		<script>
@@ -125,4 +133,4 @@
 			});
 		</script>
 	</body>
-</html>
+</html> 
