@@ -52,7 +52,7 @@
 			}
 			
 			/* Individual button positioning */
-			#button1 {
+			#homeButton {
 				top: 7%;
 				left: 3%;
 				--button-width: 24.5%;
@@ -60,7 +60,7 @@
 				--button-opacity: 0%;
 			}
 			
-			#button2 {
+			#aboutMeButton {
 				top: 8%;
 				left: 48%;
 				--button-width: 16.5%;
@@ -68,7 +68,7 @@
 				--button-opacity: 0%;
 			}
 			
-			#button3 {
+			#projectsButton {
 				top: 8%;
 				left: 67%;
 				--button-width: 14%;
@@ -76,12 +76,20 @@
 				--button-opacity: 0%;
 			}
 
-			#button4 {
+			#contactButton {
 				top: 8%;
 				left: 83.5%;
 				--button-width: 13.5%;
 				--button-height: 6%;
 				--button-opacity: 0%;
+			}
+
+			#gameButton {
+				top: 68%;
+				left: 83.5%;
+				--button-width: 13.5%;
+				--button-height: 6%;
+				--button-opacity: 100%;
 			}
 
 		</style>
@@ -96,31 +104,26 @@
 				alt="Background image"
 			/>
 			
-			<!-- Multiple buttons for different images -->
-			<button class="image-button" id="button1" data-image="/room_1920x1080_Improved_labels.png"></button>
-			<button class="image-button" id="button2" data-image="/room_1920x1080.png"></button>
-			<button class="image-button" id="button3" data-image="/room_1920x1080 copy.png"></button>
-			<button class="image-button" id="button4" data-image="/placeholder.png"></button>
+			<!-- Navigation buttons for different pages -->
+			<button class="image-button" id="homeButton" data-page="/">Home</button>
+			<button class="image-button" id="aboutMeButton" data-page="/aboutme">About Me</button>
+			<button class="image-button" id="projectsButton" data-page="/projects">Projects</button>
+			<button class="image-button" id="contactButton" data-page="/contact">Contact</button>
+			<button class="image-button" id="gameButton" data-page="/game">Game</button>
 		</div>
 
 		<script>
 			// Get all buttons with the image-button class
 			const buttons = document.querySelectorAll('.image-button');
-			const backgroundImage = document.getElementById('background-image');
 			
 			// Add click event listener to all buttons
 			buttons.forEach(button => {
 				button.addEventListener('click', function() {
-					// Get the image path from the button's data attribute
-					const newImagePath = this.getAttribute('data-image');
+					// Get the page path from the button's data attribute
+					const pagePath = this.getAttribute('data-page');
 					
-					// Change the background image
-					backgroundImage.src = newImagePath;
-					
-					// Optional: Add a visual feedback for the active button
-					buttons.forEach(btn => btn.style.backgroundColor = 'rgba(255, 255, 255, 0.9)');
-					this.style.backgroundColor = 'rgba(51, 51, 51, 0.9)';
-					this.style.color = 'white';
+					// Navigate to the specified page
+					window.location.href = pagePath;
 				});
 			});
 		</script>

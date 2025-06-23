@@ -4,7 +4,7 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Room 1 - Liam Power</title>
+		<title>Game - Liam Power</title>
 		<style>
 			/* Reset default browser margins and prevent scrollbars */
 			body,
@@ -51,29 +51,69 @@
 				display: var(--button-display);
 			}
 			
-			/* Room 1 specific button positioning */
-			#room1-button1 {
+			/* Game specific button positioning - more interactive layout */
+			#game-button1 {
 				top: 15%;
 				left: 10%;
-				--button-width: 20%;
-				--button-height: 8%;
-				--button-opacity: 0%;
-			}
-			
-			#room1-button2 {
-				top: 25%;
-				left: 60%;
 				--button-width: 15%;
 				--button-height: 10%;
-				--button-opacity: 0%;
+				--button-opacity: 100%;
 			}
 			
-			#room1-button3 {
-				top: 45%;
+			#game-button2 {
+				top: 15%;
+				left: 30%;
+				--button-width: 15%;
+				--button-height: 10%;
+				--button-opacity: 100%;
+			}
+			
+			#game-button3 {
+				top: 15%;
+				left: 50%;
+				--button-width: 15%;
+				--button-height: 10%;
+				--button-opacity: 100%;
+			}
+			
+			#game-button4 {
+				top: 15%;
+				left: 70%;
+				--button-width: 15%;
+				--button-height: 10%;
+				--button-opacity: 100%;
+			}
+			
+			#game-button5 {
+				top: 35%;
 				left: 20%;
-				--button-width: 18%;
-				--button-height: 12%;
-				--button-opacity: 0%;
+				--button-width: 12%;
+				--button-height: 15%;
+				--button-opacity: 100%;
+			}
+			
+			#game-button6 {
+				top: 35%;
+				left: 40%;
+				--button-width: 12%;
+				--button-height: 15%;
+				--button-opacity: 100%;
+			}
+			
+			#game-button7 {
+				top: 35%;
+				left: 60%;
+				--button-width: 12%;
+				--button-height: 15%;
+				--button-opacity: 100%;
+			}
+			
+			#game-button8 {
+				top: 35%;
+				left: 80%;
+				--button-width: 12%;
+				--button-height: 15%;
+				--button-opacity: 100%;
 			}
 		</style>
 	</head>
@@ -83,14 +123,19 @@
 			<!-- Background image that fills the entire viewport -->
 			<img
 				id="background-image"
-				src="/room_1920x1080_Improved_labels.png"
-				alt="Room 1 background"
+				src="/placeholder.png"
+				alt="Game background"
 			/>
 			
-			<!-- Room 1 specific buttons -->
-			<button class="image-button" id="room1-button1" data-image="/room_1920x1080.png">Button 1</button>
-			<button class="image-button" id="room1-button2" data-image="/room_1920x1080 copy.png">Button 2</button>
-			<button class="image-button" id="room1-button3" data-image="/placeholder.png">Button 3</button>
+			<!-- Game specific buttons - more interactive layout -->
+			<button class="image-button" id="game-button1" data-image="/room_1920x1080_Improved_labels.png"></button>
+			<button class="image-button" id="game-button2" data-image="/room_1920x1080.png"></button>
+			<button class="image-button" id="game-button3" data-image="/room_1920x1080 copy.png"></button>
+			<button class="image-button" id="game-button4" data-image="/placeholder.png"></button>
+			<button class="image-button" id="game-button5" data-image="/room_1920x1080_Improved_labels.png"></button>
+			<button class="image-button" id="game-button6" data-image="/room_1920x1080.png"></button>
+			<button class="image-button" id="game-button7" data-image="/room_1920x1080 copy.png"></button>
+			<button class="image-button" id="game-button8" data-image="/placeholder.png"></button>
 		</div>
 
 		<script>

@@ -4,7 +4,7 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Room 2 - Liam Power</title>
+		<title>Contact - Liam Power</title>
 		<style>
 			/* Reset default browser margins and prevent scrollbars */
 			body,
@@ -51,39 +51,45 @@
 				display: var(--button-display);
 			}
 			
-			/* Room 2 specific button positioning - completely different layout */
-			#room2-button1 {
-				top: 5%;
+			/* Contact specific button positioning */
+			#contact-button1 {
+				top: 8%;
 				left: 5%;
 				--button-width: 25%;
-				--button-height: 5%;
-				--button-opacity: 0%;
+				--button-height: 7%;
+				--button-opacity: 100%;
 			}
 			
-			#room2-button2 {
-				top: 5%;
-				right: 5%;
+			#contact-button2 {
+				top: 8%;
+				left: 35%;
 				--button-width: 25%;
-				--button-height: 5%;
-				--button-opacity: 0%;
+				--button-height: 7%;
+				--button-opacity: 100%;
 			}
 			
-			#room2-button3 {
-				bottom: 10%;
-				left: 50%;
-				transform: translateX(-50%);
-				--button-width: 30%;
-				--button-height: 8%;
-				--button-opacity: 0%;
+			#contact-button3 {
+				top: 8%;
+				left: 65%;
+				--button-width: 25%;
+				--button-height: 7%;
+				--button-opacity: 100%;
 			}
 			
-			#room2-button4 {
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
+			#contact-button4 {
+				top: 20%;
+				left: 20%;
 				--button-width: 20%;
-				--button-height: 15%;
-				--button-opacity: 0%;
+				--button-height: 12%;
+				--button-opacity: 100%;
+			}
+			
+			#contact-button5 {
+				top: 20%;
+				left: 60%;
+				--button-width: 20%;
+				--button-height: 12%;
+				--button-opacity: 100%;
 			}
 		</style>
 	</head>
@@ -93,15 +99,16 @@
 			<!-- Background image that fills the entire viewport -->
 			<img
 				id="background-image"
-				src="/room_1920x1080.png"
-				alt="Room 2 background"
+				src="/room_1920x1080 copy.png"
+				alt="Contact background"
 			/>
 			
-			<!-- Room 2 specific buttons with different layout -->
-			<button class="image-button" id="room2-button1" data-image="/room_1920x1080_Improved_labels.png"></button>
-			<button class="image-button" id="room2-button2" data-image="/room_1920x1080 copy.png"></button>
-			<button class="image-button" id="room2-button3" data-image="/placeholder.png"></button>
-			<button class="image-button" id="room2-button4" data-image="/room_1920x1080.png"></button>
+			<!-- Contact specific buttons -->
+			<button class="image-button" id="contact-button1" data-image="/room_1920x1080_Improved_labels.png"></button>
+			<button class="image-button" id="contact-button2" data-image="/room_1920x1080.png"></button>
+			<button class="image-button" id="contact-button3" data-image="/placeholder.png"></button>
+			<button class="image-button" id="contact-button4" data-image="/room_1920x1080 copy.png"></button>
+			<button class="image-button" id="contact-button5" data-image="/room_1920x1080_Improved_labels.png"></button>
 		</div>
 
 		<script>
