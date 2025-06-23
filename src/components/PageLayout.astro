@@ -57,6 +57,7 @@ const { title, backgroundImage, altText = "Background image" } = Astro.props;
 			// Get all buttons with both image-button and nav-button classes
 			const imageButtons = document.querySelectorAll('.image-button');
 			const navButtons = document.querySelectorAll('.nav-button');
+			const cycleButtons = document.querySelectorAll('.cycle-button');
 			const backgroundImage = document.getElementById('background-image');
 			
 			// Handle image-changing buttons
@@ -83,6 +84,31 @@ const { title, backgroundImage, altText = "Background image" } = Astro.props;
 					
 					// Navigate to the specified page
 					window.location.href = pagePath;
+				});
+			});
+			
+			// Handle cycle buttons
+			cycleButtons.forEach(button => {
+				button.addEventListener('click', function() {
+					// Get the images array from the button's data attribute
+					const imagesData = this.getAttribute('data-images');
+					const images = JSON.parse(imagesData);
+					
+					// Start cycling through images
+					let currentIndex = 0;
+					
+					// Function to cycle to next image
+					const cycleImage = () => {
+						if (currentIndex < images.length) {
+							backgroundImage.src = images[currentIndex];
+							currentIndex++;
+							// Schedule next image change after 1 second
+							setTimeout(cycleImage, 1000);
+						}
+					};
+					
+					// Start the cycle
+					cycleImage();
 				});
 			});
 		</script>

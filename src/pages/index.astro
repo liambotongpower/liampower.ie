@@ -1,6 +1,7 @@
 ---
 import PageLayout from '../components/PageLayout.astro';
 import NavButton from '../components/NavButton.astro';
+import CycleButton from '../components/CycleButton.astro';
 ---
 
 <PageLayout 
@@ -55,6 +56,22 @@ import NavButton from '../components/NavButton.astro';
 		top="68%"
 		left="83.5%"
 		buttonWidth="13.5%"
+		buttonHeight="6%"
+		buttonOpacity="100%"
+	/>
+	
+	<!-- Cycle button for cycling through background images -->
+	<CycleButton 
+		id="cycleButton" 
+		images={[
+			"/room_1920x1080_Improved_labels.png",
+			"/room_1920x1080.png",
+			"/room_1920x1080 copy.png",
+			"/placeholder.png"
+		]}
+		top="68%"
+		left="3%"
+		buttonWidth="20%"
 		buttonHeight="6%"
 		buttonOpacity="100%"
 	/>
