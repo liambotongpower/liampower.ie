@@ -1,131 +1,61 @@
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Liam Power</title>
-		<style>
-			/* Reset default browser margins and prevent scrollbars */
-			body,
-			html {
-				overflow: hidden; /* Prevents scrollbars */
-				margin: 0;
-				padding: 0;
-			}
-			
-			/* Container that holds both the image and buttons */
-			.container {
-				position: relative; /* Creates positioning context for absolute positioned children */
-				width: 100vw; /* Full viewport width */
-				height: 100vh; /* Full viewport height */
-			}
-			
-			/* Style for the background image */
-			img {
-				object-fit: cover; /* Ensures the image covers the screen without distortion */
-				width: 100%;
-				height: 100%;
-				transition: opacity 0.5s ease; /* Smooth transition when image changes */
-			}
-			
-			/* Base style for all buttons */
-			.image-button {
-				position: absolute; /* Position relative to the container */
-				border: 0px
-				font-size: 16px; /* Text size */
-				cursor: pointer; /* Hand cursor on hover */
-				transition: all 0.3s ease; /* Smooth animation for hover effects */
-				padding: 10px 20px; /* Add some padding */
-				
-				/* Custom properties for size and visibility control */
-				--button-width: 60px; /* Default button width */
-				--button-height: 40px; /* Default button height */
-				--button-opacity: 1; /* Default visibility (1 = visible, 0 = invisible) */
-				--button-display: block; /* Default display (block = visible, none = hidden) */
-				
-				/* Apply the custom properties */
-				width: var(--button-width);
-				height: var(--button-height);
-				opacity: var(--button-opacity);
-				display: var(--button-display);
-			}
-			
-			/* Individual button positioning */
-			#homeButton {
-				top: 7%;
-				left: 3%;
-				--button-width: 24.5%;
-				--button-height: 7%;
-				--button-opacity: 0%;
-			}
-			
-			#aboutMeButton {
-				top: 8%;
-				left: 48%;
-				--button-width: 16.5%;
-				--button-height: 6%;
-				--button-opacity: 0%;
-			}
-			
-			#projectsButton {
-				top: 8%;
-				left: 67%;
-				--button-width: 14%;
-				--button-height: 7%;
-				--button-opacity: 0%;
-			}
+---
+import PageLayout from '../components/PageLayout.astro';
+import NavButton from '../components/NavButton.astro';
+---
 
-			#contactButton {
-				top: 8%;
-				left: 83.5%;
-				--button-width: 13.5%;
-				--button-height: 6%;
-				--button-opacity: 0%;
-			}
-
-			#gameButton {
-				top: 68%;
-				left: 83.5%;
-				--button-width: 13.5%;
-				--button-height: 6%;
-				--button-opacity: 100%;
-			}
-
-		</style>
-	</head>
-	<body>
-		<!-- Container div that holds both the image and buttons -->
-		<div class="container">
-			<!-- Background image that fills the entire viewport -->
-			<img
-				id="background-image"
-				src="/room_1920x1080_Improved_labels.png"
-				alt="Background image"
-			/>
-			
-			<!-- Navigation buttons for different pages -->
-			<button class="image-button" id="homeButton" data-page="/">Home</button>
-			<button class="image-button" id="aboutMeButton" data-page="/aboutme">About Me</button>
-			<button class="image-button" id="projectsButton" data-page="/projects">Projects</button>
-			<button class="image-button" id="contactButton" data-page="/contact">Contact</button>
-			<button class="image-button" id="gameButton" data-page="/game">Game</button>
-		</div>
-
-		<script>
-			// Get all buttons with the image-button class
-			const buttons = document.querySelectorAll('.image-button');
-			
-			// Add click event listener to all buttons
-			buttons.forEach(button => {
-				button.addEventListener('click', function() {
-					// Get the page path from the button's data attribute
-					const pagePath = this.getAttribute('data-page');
-					
-					// Navigate to the specified page
-					window.location.href = pagePath;
-				});
-			});
-		</script>
-	</body>
-</html>
+<PageLayout 
+	title="Liam Power" 
+	backgroundImage="/room_1920x1080_Improved_labels.png"
+	altText="Background image"
+>
+	<!-- Navigation buttons for different pages -->
+	<NavButton 
+		id="homeButton" 
+		dataPage="/"
+		top="7%"
+		left="3%"
+		buttonWidth="24.5%"
+		buttonHeight="7%"
+		buttonOpacity="0%"
+	/>
+	
+	<NavButton 
+		id="aboutMeButton" 
+		dataPage="/aboutme"
+		top="8%"
+		left="48%"
+		buttonWidth="16.5%"
+		buttonHeight="6%"
+		buttonOpacity="0%"
+	/>
+	
+	<NavButton 
+		id="projectsButton" 
+		dataPage="/projects"
+		top="8%"
+		left="67%"
+		buttonWidth="14%"
+		buttonHeight="7%"
+		buttonOpacity="0%"
+	/>
+	
+	<NavButton 
+		id="contactButton" 
+		dataPage="/contact"
+		top="8%"
+		left="83.5%"
+		buttonWidth="13.5%"
+		buttonHeight="6%"
+		buttonOpacity="0%"
+	/>
+	
+	<NavButton 
+		id="gameButton" 
+		dataPage="/game"
+		top="68%"
+		left="83.5%"
+		buttonWidth="13.5%"
+		buttonHeight="6%"
+		buttonOpacity="100%"
+	/>
+</PageLayout>

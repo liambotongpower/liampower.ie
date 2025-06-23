@@ -1,163 +1,91 @@
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Game - Liam Power</title>
-		<style>
-			/* Reset default browser margins and prevent scrollbars */
-			body,
-			html {
-				overflow: hidden; /* Prevents scrollbars */
-				margin: 0;
-				padding: 0;
-			}
-			
-			/* Container that holds both the image and buttons */
-			.container {
-				position: relative; /* Creates positioning context for absolute positioned children */
-				width: 100vw; /* Full viewport width */
-				height: 100vh; /* Full viewport height */
-			}
-			
-			/* Style for the background image */
-			img {
-				object-fit: cover; /* Ensures the image covers the screen without distortion */
-				width: 100%;
-				height: 100%;
-				transition: opacity 0.5s ease; /* Smooth transition when image changes */
-			}
-			
-			/* Base style for all buttons */
-			.image-button {
-				position: absolute; /* Position relative to the container */
-				border: 0px;
-				font-size: 16px; /* Text size */
-				cursor: pointer; /* Hand cursor on hover */
-				transition: all 0.3s ease; /* Smooth animation for hover effects */
-				padding: 10px 20px; /* Add some padding */
-				
-				/* Custom properties for size and visibility control */
-				--button-width: 60px; /* Default button width */
-				--button-height: 40px; /* Default button height */
-				--button-opacity: 1; /* Default visibility (1 = visible, 0 = invisible) */
-				--button-display: block; /* Default display (block = visible, none = hidden) */
-				
-				/* Apply the custom properties */
-				width: var(--button-width);
-				height: var(--button-height);
-				opacity: var(--button-opacity);
-				display: var(--button-display);
-			}
-			
-			/* Game specific button positioning - more interactive layout */
-			#game-button1 {
-				top: 15%;
-				left: 10%;
-				--button-width: 15%;
-				--button-height: 10%;
-				--button-opacity: 100%;
-			}
-			
-			#game-button2 {
-				top: 15%;
-				left: 30%;
-				--button-width: 15%;
-				--button-height: 10%;
-				--button-opacity: 100%;
-			}
-			
-			#game-button3 {
-				top: 15%;
-				left: 50%;
-				--button-width: 15%;
-				--button-height: 10%;
-				--button-opacity: 100%;
-			}
-			
-			#game-button4 {
-				top: 15%;
-				left: 70%;
-				--button-width: 15%;
-				--button-height: 10%;
-				--button-opacity: 100%;
-			}
-			
-			#game-button5 {
-				top: 35%;
-				left: 20%;
-				--button-width: 12%;
-				--button-height: 15%;
-				--button-opacity: 100%;
-			}
-			
-			#game-button6 {
-				top: 35%;
-				left: 40%;
-				--button-width: 12%;
-				--button-height: 15%;
-				--button-opacity: 100%;
-			}
-			
-			#game-button7 {
-				top: 35%;
-				left: 60%;
-				--button-width: 12%;
-				--button-height: 15%;
-				--button-opacity: 100%;
-			}
-			
-			#game-button8 {
-				top: 35%;
-				left: 80%;
-				--button-width: 12%;
-				--button-height: 15%;
-				--button-opacity: 100%;
-			}
-		</style>
-	</head>
-	<body>
-		<!-- Container div that holds both the image and buttons -->
-		<div class="container">
-			<!-- Background image that fills the entire viewport -->
-			<img
-				id="background-image"
-				src="/placeholder.png"
-				alt="Game background"
-			/>
-			
-			<!-- Game specific buttons - more interactive layout -->
-			<button class="image-button" id="game-button1" data-image="/room_1920x1080_Improved_labels.png"></button>
-			<button class="image-button" id="game-button2" data-image="/room_1920x1080.png"></button>
-			<button class="image-button" id="game-button3" data-image="/room_1920x1080 copy.png"></button>
-			<button class="image-button" id="game-button4" data-image="/placeholder.png"></button>
-			<button class="image-button" id="game-button5" data-image="/room_1920x1080_Improved_labels.png"></button>
-			<button class="image-button" id="game-button6" data-image="/room_1920x1080.png"></button>
-			<button class="image-button" id="game-button7" data-image="/room_1920x1080 copy.png"></button>
-			<button class="image-button" id="game-button8" data-image="/placeholder.png"></button>
-		</div>
+---
+import PageLayout from '../components/PageLayout.astro';
+import ImageButton from '../components/ImageButton.astro';
+---
 
-		<script>
-			// Get all buttons with the image-button class
-			const buttons = document.querySelectorAll('.image-button');
-			const backgroundImage = document.getElementById('background-image');
-			
-			// Add click event listener to all buttons
-			buttons.forEach(button => {
-				button.addEventListener('click', function() {
-					// Get the image path from the button's data attribute
-					const newImagePath = this.getAttribute('data-image');
-					
-					// Change the background image
-					backgroundImage.src = newImagePath;
-					
-					// Optional: Add a visual feedback for the active button
-					buttons.forEach(btn => btn.style.backgroundColor = 'rgba(255, 255, 255, 0.9)');
-					this.style.backgroundColor = 'rgba(51, 51, 51, 0.9)';
-					this.style.color = 'white';
-				});
-			});
-		</script>
-	</body>
-</html> 
+<PageLayout 
+	title="Game - Liam Power" 
+	backgroundImage="/placeholder.png"
+	altText="Game background"
+>
+	<!-- Game specific buttons - more interactive layout -->
+	<ImageButton 
+		id="game-button1" 
+		dataImage="/room_1920x1080_Improved_labels.png"
+		top="15%"
+		left="10%"
+		buttonWidth="15%"
+		buttonHeight="10%"
+		buttonOpacity="100%"
+	/>
+	
+	<ImageButton 
+		id="game-button2" 
+		dataImage="/room_1920x1080.png"
+		top="15%"
+		left="30%"
+		buttonWidth="15%"
+		buttonHeight="10%"
+		buttonOpacity="100%"
+	/>
+	
+	<ImageButton 
+		id="game-button3" 
+		dataImage="/room_1920x1080 copy.png"
+		top="15%"
+		left="50%"
+		buttonWidth="15%"
+		buttonHeight="10%"
+		buttonOpacity="100%"
+	/>
+	
+	<ImageButton 
+		id="game-button4" 
+		dataImage="/placeholder.png"
+		top="15%"
+		left="70%"
+		buttonWidth="15%"
+		buttonHeight="10%"
+		buttonOpacity="100%"
+	/>
+	
+	<ImageButton 
+		id="game-button5" 
+		dataImage="/room_1920x1080_Improved_labels.png"
+		top="35%"
+		left="20%"
+		buttonWidth="12%"
+		buttonHeight="15%"
+		buttonOpacity="100%"
+	/>
+	
+	<ImageButton 
+		id="game-button6" 
+		dataImage="/room_1920x1080.png"
+		top="35%"
+		left="40%"
+		buttonWidth="12%"
+		buttonHeight="15%"
+		buttonOpacity="100%"
+	/>
+	
+	<ImageButton 
+		id="game-button7" 
+		dataImage="/room_1920x1080 copy.png"
+		top="35%"
+		left="60%"
+		buttonWidth="12%"
+		buttonHeight="15%"
+		buttonOpacity="100%"
+	/>
+	
+	<ImageButton 
+		id="game-button8" 
+		dataImage="/placeholder.png"
+		top="35%"
+		left="80%"
+		buttonWidth="12%"
+		buttonHeight="15%"
+		buttonOpacity="100%"
+	/>
+</PageLayout> 

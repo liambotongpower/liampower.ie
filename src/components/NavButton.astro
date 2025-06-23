@@ -1,0 +1,50 @@
+---
+export interface Props {
+  id: string;
+  dataPage: string;
+  top: string;
+  left: string;
+  buttonWidth: string;
+  buttonHeight: string;
+  buttonOpacity?: string;
+}
+
+const { id, dataPage, top, left, buttonWidth, buttonHeight, buttonOpacity = "0%" } = Astro.props;
+---
+
+<button 
+  class="nav-button" 
+  id={id} 
+  data-page={dataPage}
+  style={`
+    top: ${top};
+    left: ${left};
+    --button-width: ${buttonWidth};
+    --button-height: ${buttonHeight};
+    --button-opacity: ${buttonOpacity};
+  `}
+></button>
+
+<style>
+  /* Base style for all navigation buttons */
+  .nav-button {
+    position: absolute; /* Position relative to the container */
+    border: 0px;
+    font-size: 16px; /* Text size */
+    cursor: pointer; /* Hand cursor on hover */
+    transition: all 0.3s ease; /* Smooth animation for hover effects */
+    padding: 10px 20px; /* Add some padding */
+    
+    /* Custom properties for size and visibility control */
+    --button-width: 60px; /* Default button width */
+    --button-height: 40px; /* Default button height */
+    --button-opacity: 1; /* Default visibility (1 = visible, 0 = invisible) */
+    --button-display: block; /* Default display (block = visible, none = hidden) */
+    
+    /* Apply the custom properties */
+    width: var(--button-width);
+    height: var(--button-height);
+    opacity: var(--button-opacity);
+    display: var(--button-display);
+  }
+</style> 

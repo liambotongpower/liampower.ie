@@ -1,0 +1,90 @@
+---
+export interface Props {
+  title: string;
+  backgroundImage: string;
+  altText?: string;
+}
+
+const { title, backgroundImage, altText = "Background image" } = Astro.props;
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<style>
+			/* Reset default browser margins and prevent scrollbars */
+			body,
+			html {
+				overflow: hidden; /* Prevents scrollbars */
+				margin: 0;
+				padding: 0;
+			}
+			
+			/* Container that holds both the image and buttons */
+			.container {
+				position: relative; /* Creates positioning context for absolute positioned children */
+				width: 100vw; /* Full viewport width */
+				height: 100vh; /* Full viewport height */
+			}
+			
+			/* Style for the background image */
+			img {
+				object-fit: cover; /* Ensures the image covers the screen without distortion */
+				width: 100%;
+				height: 100%;
+				transition: opacity 0.5s ease; /* Smooth transition when image changes */
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Container div that holds both the image and buttons -->
+		<div class="container">
+			<!-- Background image that fills the entire viewport -->
+			<img
+				id="background-image"
+				src={backgroundImage}
+				alt={altText}
+			/>
+			
+			<slot />
+		</div>
+
+		<script>
+			// Get all buttons with both image-button and nav-button classes
+			const imageButtons = document.querySelectorAll('.image-button');
+			const navButtons = document.querySelectorAll('.nav-button');
+			const backgroundImage = document.getElementById('background-image');
+			
+			// Handle image-changing buttons
+			imageButtons.forEach(button => {
+				button.addEventListener('click', function() {
+					// Get the image path from the button's data attribute
+					const newImagePath = this.getAttribute('data-image');
+					
+					// Change the background image
+					backgroundImage.src = newImagePath;
+					
+					// Optional: Add a visual feedback for the active button
+					imageButtons.forEach(btn => btn.style.backgroundColor = 'rgba(255, 255, 255, 0.9)');
+					this.style.backgroundColor = 'rgba(51, 51, 51, 0.9)';
+					this.style.color = 'white';
+				});
+			});
+			
+			// Handle navigation buttons
+			navButtons.forEach(button => {
+				button.addEventListener('click', function() {
+					// Get the page path from the button's data attribute
+					const pagePath = this.getAttribute('data-page');
+					
+					// Navigate to the specified page
+					window.location.href = pagePath;
+				});
+			});
+		</script>
+	</body>
+</html> 
