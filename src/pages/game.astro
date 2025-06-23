@@ -1,91 +1,21 @@
 ---
 import PageLayout from '../components/PageLayout.astro';
 import ImageButton from '../components/ImageButton.astro';
+import NavButton from '../components/NavButton.astro';
 ---
 
 <PageLayout 
 	title="Game - Liam Power" 
-	backgroundImage="/placeholder.png"
+	backgroundImage="/placeholders/game_placeholder.png"
 	altText="Game background"
 >
-	<!-- Game specific buttons - more interactive layout -->
-	<ImageButton 
-		id="game-button1" 
-		dataImage="/room_1920x1080_Improved_labels.png"
-		top="15%"
-		left="10%"
-		buttonWidth="15%"
-		buttonHeight="10%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="game-button2" 
-		dataImage="/room_1920x1080.png"
-		top="15%"
-		left="30%"
-		buttonWidth="15%"
-		buttonHeight="10%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="game-button3" 
-		dataImage="/room_1920x1080 copy.png"
-		top="15%"
-		left="50%"
-		buttonWidth="15%"
-		buttonHeight="10%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="game-button4" 
-		dataImage="/placeholder.png"
-		top="15%"
-		left="70%"
-		buttonWidth="15%"
-		buttonHeight="10%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="game-button5" 
-		dataImage="/room_1920x1080_Improved_labels.png"
-		top="35%"
-		left="20%"
-		buttonWidth="12%"
-		buttonHeight="15%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="game-button6" 
-		dataImage="/room_1920x1080.png"
-		top="35%"
-		left="40%"
-		buttonWidth="12%"
-		buttonHeight="15%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="game-button7" 
-		dataImage="/room_1920x1080 copy.png"
-		top="35%"
-		left="60%"
-		buttonWidth="12%"
-		buttonHeight="15%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="game-button8" 
-		dataImage="/placeholder.png"
-		top="35%"
-		left="80%"
-		buttonWidth="12%"
-		buttonHeight="15%"
+	<NavButton 
+		id="gameHomeButton" 
+		dataPage="/"
+		top="12%"
+		left="8%"
+		buttonWidth="18%"
+		buttonHeight="6%"
 		buttonOpacity="100%"
 	/>
 </PageLayout> 

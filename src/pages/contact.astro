@@ -1,61 +1,22 @@
 ---
 import PageLayout from '../components/PageLayout.astro';
 import ImageButton from '../components/ImageButton.astro';
+import NavButton from '../components/NavButton.astro';
 ---
 
 <PageLayout 
 	title="Contact - Liam Power" 
-	backgroundImage="/room_1920x1080 copy.png"
+	backgroundImage="/placeholders/contact_placeholder.png"
 	altText="Contact background"
 >
-	<!-- Contact specific buttons -->
-	<ImageButton 
-		id="contact-button1" 
-		dataImage="/room_1920x1080_Improved_labels.png"
-		top="8%"
-		left="5%"
-		buttonWidth="25%"
-		buttonHeight="7%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="contact-button2" 
-		dataImage="/room_1920x1080.png"
-		top="8%"
-		left="35%"
-		buttonWidth="25%"
-		buttonHeight="7%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="contact-button3" 
-		dataImage="/placeholder.png"
-		top="8%"
-		left="65%"
-		buttonWidth="25%"
-		buttonHeight="7%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="contact-button4" 
-		dataImage="/room_1920x1080 copy.png"
-		top="20%"
-		left="20%"
-		buttonWidth="20%"
-		buttonHeight="12%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="contact-button5" 
-		dataImage="/room_1920x1080_Improved_labels.png"
-		top="20%"
-		left="60%"
-		buttonWidth="20%"
-		buttonHeight="12%"
+
+	<NavButton 
+		id="contactHomeButton" 
+		dataPage="/"
+		top="12%"
+		left="8%"
+		buttonWidth="18%"
+		buttonHeight="6%"
 		buttonOpacity="100%"
 	/>
 </PageLayout> 

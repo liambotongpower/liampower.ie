@@ -1,61 +1,21 @@
 ---
 import PageLayout from '../components/PageLayout.astro';
 import ImageButton from '../components/ImageButton.astro';
+import NavButton from '../components/NavButton.astro';
 ---
 
 <PageLayout 
 	title="Projects - Liam Power" 
-	backgroundImage="/room_1920x1080.png"
+	backgroundImage="/placeholders/projects_placeholder.png"
 	altText="Projects background"
 >
-	<!-- Projects specific buttons -->
-	<ImageButton 
-		id="projects-button1" 
-		dataImage="/room_1920x1080_Improved_labels.png"
-		top="10%"
-		left="15%"
-		buttonWidth="20%"
-		buttonHeight="8%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="projects-button2" 
-		dataImage="/room_1920x1080 copy.png"
-		top="10%"
-		left="45%"
-		buttonWidth="20%"
-		buttonHeight="8%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="projects-button3" 
-		dataImage="/placeholder.png"
-		top="10%"
-		left="75%"
-		buttonWidth="20%"
-		buttonHeight="8%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="projects-button4" 
-		dataImage="/room_1920x1080.png"
-		top="25%"
-		left="30%"
-		buttonWidth="15%"
-		buttonHeight="10%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="projects-button5" 
-		dataImage="/room_1920x1080_Improved_labels.png"
-		top="25%"
-		left="55%"
-		buttonWidth="15%"
-		buttonHeight="10%"
+	<NavButton 
+		id="projectsHomeButton" 
+		dataPage="/"
+		top="12%"
+		left="8%"
+		buttonWidth="18%"
+		buttonHeight="6%"
 		buttonOpacity="100%"
 	/>
 </PageLayout> 
