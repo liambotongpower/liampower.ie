@@ -1,50 +1,20 @@
 ---
 import PageLayout from '../components/PageLayout.astro';
 import ImageButton from '../components/ImageButton.astro';
+import NavButton from '../components/NavButton.astro';
 ---
 
 <PageLayout 
 	title="About Me - Liam Power" 
-	backgroundImage="/room_1920x1080_Improved_labels.png"
+	backgroundImage="/placeholders/aboutme_placeholder.png"
 	altText="About Me background"
 >
 	<!-- About Me specific buttons -->
-	<ImageButton 
-		id="about-button1" 
-		dataImage="/room_1920x1080.png"
+	<NavButton 
+		id="aboutHomeButton" 
 		top="12%"
 		left="8%"
 		buttonWidth="18%"
-		buttonHeight="6%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="about-button2" 
-		dataImage="/room_1920x1080 copy.png"
-		top="12%"
-		left="35%"
-		buttonWidth="18%"
-		buttonHeight="6%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="about-button3" 
-		dataImage="/placeholder.png"
-		top="12%"
-		left="62%"
-		buttonWidth="18%"
-		buttonHeight="6%"
-		buttonOpacity="100%"
-	/>
-	
-	<ImageButton 
-		id="about-button4" 
-		dataImage="/room_1920x1080_Improved_labels.png"
-		top="12%"
-		left="89%"
-		buttonWidth="8%"
 		buttonHeight="6%"
 		buttonOpacity="100%"
 	/>
