@@ -1,7 +1,3 @@
----
-// No server-side code needed for this
----
-
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
@@ -10,25 +6,123 @@
 		<meta name="generator" content={Astro.generator} />
 		<title>Liam Power</title>
 		<style>
+			/* Reset default browser margins and prevent scrollbars */
 			body,
 			html {
+				overflow: hidden; /* Prevents scrollbars */
 				margin: 0;
 				padding: 0;
-				width: 100%;
-				height: 100%;
-				overflow: hidden; /* Prevents scrollbars */
 			}
+			
+			/* Container that holds both the image and buttons */
+			.container {
+				position: relative; /* Creates positioning context for absolute positioned children */
+				width: 100vw; /* Full viewport width */
+				height: 100vh; /* Full viewport height */
+			}
+			
+			/* Style for the background image */
 			img {
+				object-fit: cover; /* Ensures the image covers the screen without distortion */
 				width: 100%;
 				height: 100%;
-				object-fit: cover; /* Ensures the image covers the screen without distortion */
+				transition: opacity 0.5s ease; /* Smooth transition when image changes */
 			}
+			
+			/* Base style for all buttons */
+			.image-button {
+				position: absolute; /* Position relative to the container */
+				border: 0px
+				font-size: 16px; /* Text size */
+				cursor: pointer; /* Hand cursor on hover */
+				transition: all 0.3s ease; /* Smooth animation for hover effects */
+				padding: 10px 20px; /* Add some padding */
+				
+				/* Custom properties for size and visibility control */
+				--button-width: 60px; /* Default button width */
+				--button-height: 40px; /* Default button height */
+				--button-opacity: 1; /* Default visibility (1 = visible, 0 = invisible) */
+				--button-display: block; /* Default display (block = visible, none = hidden) */
+				
+				/* Apply the custom properties */
+				width: var(--button-width);
+				height: var(--button-height);
+				opacity: var(--button-opacity);
+				display: var(--button-display);
+			}
+			
+			/* Individual button positioning */
+			#button1 {
+				top: 7%;
+				left: 3%;
+				--button-width: 24.5%; /* Override default size */
+				--button-height: 7%;
+				--button-opacity: 50%; /* Fully visible */
+			}
+			
+			#button2 {
+				top: 8%;
+				left: 48%;
+				--button-width: 16.5%; /* Larger button */
+				--button-height: 6%;
+				--button-opacity: 50%; /* Slightly transparent */
+			}
+			
+			#button3 {
+				top: 8%;
+				left: 67%;
+				--button-width: 50px; /* Smaller button */
+				--button-height: 30px;
+				--button-opacity: 1;
+			}
+
+			#button4 {
+				top: 8%;
+				left: 87%;
+				--button-width: 70px;
+				--button-height: 45px;
+				--button-opacity: 0.6; /* More transparent */
+			}
+
 		</style>
 	</head>
 	<body>
-		<img
-			src="/room_1920x1080_Improved_labels.png"
-			alt="A pixel art scene of a room with two windows."
-		/>
+		<!-- Container div that holds both the image and buttons -->
+		<div class="container">
+			<!-- Background image that fills the entire viewport -->
+			<img
+				id="background-image"
+				src="/room_1920x1080_Improved_labels.png"
+				alt="Background image"
+			/>
+			
+			<!-- Multiple buttons for different images -->
+			<button class="image-button" id="button1" data-image="/room_1920x1080_Improved_labels.png"></button>
+			<button class="image-button" id="button2" data-image="/room_1920x1080.png"></button>
+			<button class="image-button" id="button3" data-image="/room_1920x1080 copy.png"></button>
+			<button class="image-button" id="button4" data-image="/placeholder.png"></button>
+		</div>
+
+		<script>
+			// Get all buttons with the image-button class
+			const buttons = document.querySelectorAll('.image-button');
+			const backgroundImage = document.getElementById('background-image');
+			
+			// Add click event listener to all buttons
+			buttons.forEach(button => {
+				button.addEventListener('click', function() {
+					// Get the image path from the button's data attribute
+					const newImagePath = this.getAttribute('data-image');
+					
+					// Change the background image
+					backgroundImage.src = newImagePath;
+					
+					// Optional: Add a visual feedback for the active button
+					buttons.forEach(btn => btn.style.backgroundColor = 'rgba(255, 255, 255, 0.9)');
+					this.style.backgroundColor = 'rgba(51, 51, 51, 0.9)';
+					this.style.color = 'white';
+				});
+			});
+		</script>
 	</body>
 </html>
