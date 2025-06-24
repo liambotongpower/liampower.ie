@@ -97,21 +97,55 @@ const { title, backgroundImage, altText = "Background image" } = Astro.props;
 					// Get the speed from the button's data attribute (default: 1000ms)
 					const speed = parseInt(this.getAttribute('data-speed')) || 1000;
 					
-					// Start cycling through images
-					let currentIndex = 0;
-					
-					// Function to cycle to next image
-					const cycleImage = () => {
-						if (currentIndex < images.length) {
-							backgroundImage.src = images[currentIndex];
-							currentIndex++;
-							// Schedule next image change using the button's speed setting
-							setTimeout(cycleImage, speed);
-						}
+					// Preload all images first
+					const preloadImages = () => {
+						return Promise.all(images.map(imagePath => {
+							return new Promise((resolve, reject) => {
+								const img = new Image();
+								img.onload = () => resolve(imagePath);
+								img.onerror = () => reject(new Error(`Failed to load image: ${imagePath}`));
+								img.src = imagePath;
+							});
+						}));
 					};
 					
-					// Start the cycle
-					cycleImage();
+					// Show preliminary image for 1 second, then start cycling
+					preloadImages().then(() => {
+						// Show the first image as preliminary for 1 second
+						backgroundImage.src = images[0];
+						
+						// After 1 second, start the cycling animation
+						setTimeout(() => {
+							let currentIndex = 1; // Start from second image since we already showed the first
+							
+							// Function to cycle to next image
+							const cycleImage = () => {
+								if (currentIndex < images.length) {
+									backgroundImage.src = images[currentIndex];
+									currentIndex++;
+									// Schedule next image change using the button's speed setting
+									setTimeout(cycleImage, speed);
+								}
+							};
+							
+							// Start the cycle
+							cycleImage();
+						}, 1000); // Wait 1 second before starting the cycle
+					}).catch(error => {
+						console.error('Error preloading images:', error);
+						// Fallback: start cycling immediately if preloading fails
+						let currentIndex = 0;
+						
+						const cycleImage = () => {
+							if (currentIndex < images.length) {
+								backgroundImage.src = images[currentIndex];
+								currentIndex++;
+								setTimeout(cycleImage, speed);
+							}
+						};
+						
+						cycleImage();
+					});
 				});
 			});
 		</script>
