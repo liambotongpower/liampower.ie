@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
 import { Folder, HardDrive, FileText, Trash2, StickyNote, Minus, X, Monitor, ChevronLeft, ChevronUp, Home, RefreshCcw, Clock, ChevronRight, Settings, HelpCircle, Power } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -16,7 +17,12 @@ type WinInstance = {
   size?: { w: number; h: number }
   minimized: boolean
   z: number
-  payload?: any
+  payload?: WindowPayload
+}
+
+type WindowPayload = {
+  initialPath?: string[]
+  text?: string
 }
 
 function useZIndexManager() {
@@ -91,17 +97,17 @@ function getNodeByPath(root: FSFolder, path: string[]): FSNode | null {
   let cur: FSNode = root
   for (const p of path) {
     if (cur.type !== 'folder') return null
-    const next = cur.children[p]
-    if (!next) return null
-    cur = next
+    const folder = cur as FSFolder
+    const nextNode: FSNode | undefined = folder.children[p]
+    if (!nextNode) return null
+    cur = nextNode
   }
   return cur
 }
 
-function Windows95Raised({ className, children, role }: { className?: string; children?: React.ReactNode; role?: string }) {
+function Windows95Raised({ className, children }: { className?: string; children?: React.ReactNode }) {
   return (
     <div
-      role={role}
       className={cn(
         // Raised bevel: light top/left, dark bottom/right
         'border border-t-white border-l-white border-r-[#404040] border-b-[#404040] bg-[#c0c0c0]',
@@ -174,8 +180,8 @@ function Window95({
     const startY = e.clientY
     const offset = { x: startX - position.x, y: startY - position.y }
     dragStart.current = { offset }
-    window.addEventListener('mousemove', onMouseMove as any)
-    window.addEventListener('mouseup', onMouseUp as any)
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
   }
 
   const onMouseMove = (e: MouseEvent) => {
@@ -187,8 +193,8 @@ function Window95({
 
   const onMouseUp = () => {
     dragStart.current = null
-    window.removeEventListener('mousemove', onMouseMove as any)
-    window.removeEventListener('mouseup', onMouseUp as any)
+    window.removeEventListener('mousemove', onMouseMove)
+    window.removeEventListener('mouseup', onMouseUp)
   }
 
   if (minimized) return null
@@ -276,7 +282,7 @@ function DesktopIcon({
       title={title}
     >
       {imgSrc ? (
-        <img
+        <Image
           src={imgSrc || '/placeholder.svg?height=40&width=40'}
           alt={imgAlt || title}
           width={40}
@@ -301,7 +307,7 @@ function StartMenu({
 }: {
   isOpen: boolean
   onClose: () => void
-  onOpenApp: (type: WindowType, payload?: any) => void
+  onOpenApp: (type: WindowType, payload?: WindowPayload) => void
 }) {
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -630,7 +636,6 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
       setPath((p) => [...p, name])
     } else {
       // File: For demo, do nothing or alert
-      // eslint-disable-next-line no-alert
       alert(`Opening file: ${name}`)
     }
   }
@@ -840,7 +845,7 @@ export default function Page() {
     )
   }
 
-  const openApp = (type: WindowType, payload?: any) => {
+  const openApp = (type: WindowType, payload?: WindowPayload) => {
     const id = `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     const base: WinInstance = {
       id,
