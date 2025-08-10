@@ -274,7 +274,7 @@ function DesktopIcon({
     <button
       onClick={handleClick}
       className={cn(
-        'flex flex-col items-center justify-start gap-1 p-2 rounded outline-none focus:ring-2 focus:ring-emerald-400 w-20 h-24',
+        'flex flex-col items-center justify-start gap-1 p-2 rounded outline-none focus:ring-2 focus:ring-emerald-400 w-28 h-32',
         { 'bg-black/20': selected },
         className
       )}
@@ -285,15 +285,15 @@ function DesktopIcon({
         <Image
           src={imgSrc || '/placeholder.svg?height=40&width=40'}
           alt={imgAlt || title}
-          width={40}
-          height={40}
-          className="w-10 h-10 object-contain"
+          width={80}
+          height={80}
+          className="w-20 h-20 object-contain"
           draggable={false}
         />
       ) : (
-        <Icon className="w-10 h-10 text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]" />
+        <Icon className="w-20 h-20 text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]" />
       )}
-      <span className="text-xs text-white text-center leading-tight drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]">
+      <span className="text-lg text-white text-center leading-tight drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]">
         {title}
       </span>
     </button>
@@ -434,17 +434,17 @@ function Taskbar({
   }, [])
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-10" style={{ zIndex: 9999 }}>
-      <Windows95Raised className="h-full w-full px-2 flex items-center gap-2">
+    <div className="fixed bottom-0 left-0 right-0 h-16" style={{ zIndex: 9999 }}>
+      <Windows95Raised className="h-full w-full px-3 flex items-center gap-3">
         <button
           onClick={onStartClick}
           className={cn(
-            "px-3 py-1 text-sm bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white flex items-center gap-2",
+            "px-4 py-2 text-base bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white flex items-center gap-2",
             isStartMenuOpen && "border-t-[#404040] border-l-[#404040] border-r-white border-b-white"
           )}
           aria-label="Start"
         >
-          <Home className="w-4 h-4" />
+          <Home className="w-5 h-5" />
           Start
         </button>
         <div className="flex-1 flex items-center gap-2 overflow-x-auto">
@@ -456,13 +456,13 @@ function Taskbar({
                 onToggleMinimize(w.id)
                 onFocus(w.id)
               }}
-              className={cn(
-                'px-3 py-1 text-sm whitespace-nowrap bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white',
-                {
-                  'border-t-[#404040] border-l-[#404040] border-r-white border-b-white':
-                    !w.minimized, // appear pressed if active
-                }
-              )}
+                              className={cn(
+                  'px-4 py-2 text-base whitespace-nowrap bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white',
+                  {
+                    'border-t-[#404040] border-l-[#404040] border-r-white border-b-white':
+                      !w.minimized, // appear pressed if active
+                  }
+                )}
               aria-label={`${w.title} taskbar button`}
               title={w.title}
             >
@@ -470,9 +470,9 @@ function Taskbar({
             </button>
           ))}
         </div>
-        <Windows95Inset className="px-2 py-1 flex items-center gap-1 min-w-[72px] justify-end">
-          <Clock className="w-4 h-4" aria-hidden />
-          <span className="text-sm tabular-nums">{time}</span>
+        <Windows95Inset className="px-3 py-2 flex items-center gap-2 min-w-[96px] justify-end">
+          <Clock className="w-5 h-5" aria-hidden />
+          <span className="text-base tabular-nums">{time}</span>
         </Windows95Inset>
       </Windows95Raised>
     </div>
@@ -679,7 +679,14 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
           <ChevronRight
             className={cn('w-3 h-3 transition-transform', open && 'rotate-90')}
           />
-          <Folder className="w-3.5 h-3.5" />
+          <Image
+            src="/icons/closed_folder.webp"
+            alt={label}
+            width={14}
+            height={14}
+            className="w-3.5 h-3.5 object-contain"
+            draggable={false}
+          />
           <span className="truncate">{label}</span>
         </button>
         {open && (
@@ -763,7 +770,14 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
               onClick={() => setPath([])}
               aria-label="My Computer"
             >
-              <Monitor className="w-3.5 h-3.5" />
+              <Image
+                src="/icons/computer.webp"
+                alt="My Computer"
+                width={14}
+                height={14}
+                className="w-3.5 h-3.5 object-contain"
+                draggable={false}
+              />
               <span>My Computer</span>
             </button>
             {/* Drives */}
@@ -779,7 +793,7 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
             <div className="h-full w-fit flex flex-col flex-wrap content-start items-start gap-y-2 gap-x-4">
               {rightPaneItems.map((item) => {
                 const isFolder = item.type === 'folder' || item.type === 'drive'
-                const Icon = isFolder ? Folder : FileText
+                const iconSrc = isFolder ? '/icons/closed_folder.webp' : '/icons/text_file.webp'
                 return (
                   <button
                     key={item.name}
@@ -788,7 +802,14 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
                     aria-label={`Open ${item.name}`}
                     title={item.name}
                   >
-                    <Icon className="w-8 h-8 text-black" />
+                    <Image
+                      src={iconSrc}
+                      alt={item.name}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 object-contain"
+                      draggable={false}
+                    />
                     <span className="text-xs text-black text-center truncate w-full leading-tight">
                       {item.name}
                     </span>
@@ -895,35 +916,35 @@ export default function Page() {
       key: 'my-computer',
       title: 'My Computer',
       icon: HardDrive,
-      imgSrc: '/placeholder.svg?height=40&width=40',
+      imgSrc: '/icons/computer.webp',
       onOpen: () => openApp('file-explorer', { initialPath: [] }),
     },
     {
       key: 'documents',
       title: 'Documents',
       icon: Folder,
-      imgSrc: '/placeholder.svg?height=40&width=40',
+      imgSrc: '/icons/closed_folder.webp',
       onOpen: () => openApp('file-explorer', { initialPath: ['C:', 'Documents'] }),
     },
     {
       key: 'notepad',
       title: 'Notepad',
       icon: StickyNote,
-      imgSrc: '/placeholder.svg?height=40&width=40',
+      imgSrc: '/icons/notepad.webp',
       onOpen: () => openApp('notepad'),
     },
     {
       key: 'recycle-bin',
       title: 'Recycle Bin',
       icon: Trash2,
-      imgSrc: '/placeholder.svg?height=40&width=40',
+      imgSrc: '/icons/dustbin.webp',
       onOpen: () => openApp('recycle-bin'),
     },
     {
       key: 'about',
       title: 'About',
       icon: Monitor,
-      imgSrc: '/placeholder.svg?height=40&width=40',
+      imgSrc: '/icons/help.webp',
       onOpen: () => openApp('about'),
     },
   ]
@@ -939,7 +960,7 @@ export default function Page() {
       }}
     >
       {/* Desktop icons, vertical-first with column wrapping */}
-      <div className="absolute inset-x-0 top-0 bottom-10 p-4 pointer-events-auto">
+      <div className="absolute inset-x-0 top-0 bottom-16 p-4 pointer-events-auto">
         <div className="h-full w-fit flex flex-col flex-wrap content-start items-start gap-y-4 gap-x-6">
           {desktopIcons.map((ic) => (
             <DesktopIcon
