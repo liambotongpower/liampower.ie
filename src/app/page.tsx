@@ -79,14 +79,7 @@ const FS_ROOT: FSFolder = {
             'Logo.png': { type: 'file', ext: 'png', size: 120_432 },
           },
         },
-        Windows: { type: 'folder', children: {} },
         'autoexec.bat': { type: 'file', ext: 'bat', size: 512 },
-      },
-    },
-    'D:': {
-      type: 'folder',
-      children: {
-        'Setup.exe': { type: 'file', ext: 'exe', size: 2_412_000 },
       },
     },
   },
@@ -285,15 +278,15 @@ function DesktopIcon({
         <Image
           src={imgSrc || '/placeholder.svg?height=40&width=40'}
           alt={imgAlt || title}
-          width={80}
-          height={80}
-          className="w-20 h-20 object-contain"
+          width={64}
+          height={64}
+          className="w-16 h-16 object-contain"
           draggable={false}
         />
       ) : (
-        <Icon className="w-20 h-20 text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]" />
+        <Icon className="w-16 h-16 text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]" />
       )}
-      <span className="text-lg text-white text-center leading-tight drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]">
+      <span className="text-base text-white text-center leading-tight drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]">
         {title}
       </span>
     </button>
