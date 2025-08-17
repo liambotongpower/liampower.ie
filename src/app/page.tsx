@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Folder, HardDrive, FileText, Trash2, StickyNote, Minus, X, Monitor, ChevronLeft, ChevronUp, Home, RefreshCcw, Clock, ChevronRight, Settings, HelpCircle, Power } from 'lucide-react'
+import { Folder, FileText, Minus, X, Monitor, ChevronLeft, ChevronUp, Home, RefreshCcw, Clock, ChevronRight, Settings, HelpCircle, Power } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type Vec2 = { x: number; y: number }
 
-type WindowType = 'file-explorer' | 'notepad' | 'recycle-bin' | 'about'
+type WindowType = 'file-explorer' | 'notepad' | 'recycle-bin' | 'about' | 'image-viewer' | 'pdf-viewer'
 
 type WinInstance = {
   id: string
@@ -23,6 +23,25 @@ type WinInstance = {
 type WindowPayload = {
   initialPath?: string[]
   text?: string
+  currentFile?: string
+  filePath?: string
+  fileType?: 'image' | 'pdf'
+}
+
+// Drag and drop types
+type DragItem = {
+  type: 'desktop-icon' | 'file-explorer-item'
+  name: string
+  path: string[]
+  isFolder: boolean
+  originalLocation: string[]
+}
+
+type DragState = {
+  isDragging: boolean
+  item: DragItem | null
+  position: Vec2
+  dragImage?: HTMLImageElement
 }
 
 function useZIndexManager() {
@@ -55,11 +74,27 @@ function randPosition(offset = 40) {
 }
 
 // Fake filesystem for File Explorer
-type FSFile = { type: 'file'; ext: string; size: number }
+type FSFile = { type: 'file'; ext: string; size: number; content?: string }
 type FSFolder = { type: 'folder'; children: Record<string, FSNode> }
 type FSNode = FSFile | FSFolder
 
-const FS_ROOT: FSFolder = {
+// Extended types for recycle bin items
+type RecycledFile = FSFile & {
+  originalPath?: string[]
+  originalName?: string
+  deletedAt?: string
+}
+
+type RecycledFolder = FSFolder & {
+  originalPath?: string[]
+  originalName?: string
+  deletedAt?: string
+}
+
+type RecycledNode = RecycledFile | RecycledFolder
+
+// Default file system structure
+const DEFAULT_FS_ROOT: FSFolder = {
   type: 'folder',
   children: {
     'C:': {
@@ -67,27 +102,61 @@ const FS_ROOT: FSFolder = {
       children: {
         Desktop: {
           type: 'folder',
-          children: {},
+          children: {
+            'My Computer.lnk': { type: 'file', ext: 'lnk', size: 1024 },
+            'Documents.lnk': { type: 'file', ext: 'lnk', size: 1024 },
+            'Notepad.lnk': { type: 'file', ext: 'lnk', size: 1024 },
+            'Recycle Bin.lnk': { type: 'file', ext: 'lnk', size: 1024 },
+            'About.lnk': { type: 'file', ext: 'lnk', size: 1024 },
+          },
         },
         Documents: {
           type: 'folder',
           children: {
-            'Resume.txt': { type: 'file', ext: 'txt', size: 12_345 },
-            'Ideas.txt': { type: 'file', ext: 'txt', size: 3_210 },
+            'CV/Resume.pdf': { type: 'file', ext: 'pdf', size: 28_672 },
           },
         },
         Pictures: {
           type: 'folder',
           children: {
-            'Photo1.jpg': { type: 'file', ext: 'jpg', size: 845_120 },
-            'Logo.png': { type: 'file', ext: 'png', size: 120_432 },
+            'Image of Liam.jpg': { type: 'file', ext: 'jpg', size: 1_600_000 },
           },
         },
-        'autoexec.bat': { type: 'file', ext: 'bat', size: 512 },
       },
     },
   },
 }
+
+// Function to load file system from localStorage
+function loadFileSystem(): FSFolder {
+  if (typeof window === 'undefined') return DEFAULT_FS_ROOT
+  
+  try {
+    const saved = localStorage.getItem('win95-filesystem')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      return parsed
+    }
+  } catch (error) {
+    console.error('Error loading file system from localStorage:', error)
+  }
+  
+  return DEFAULT_FS_ROOT
+}
+
+// Function to save file system to localStorage
+function saveFileSystem(fs: FSFolder) {
+  if (typeof window === 'undefined') return
+  
+  try {
+    localStorage.setItem('win95-filesystem', JSON.stringify(fs))
+  } catch (error) {
+    console.error('Error saving file system to localStorage:', error)
+  }
+}
+
+// Initialize file system
+const FS_ROOT = loadFileSystem()
 
 function getNodeByPath(root: FSFolder, path: string[]): FSNode | null {
   if (path.length === 0) return root
@@ -110,10 +179,12 @@ function createFile(root: FSFolder, path: string[], filename: string, content: s
   const newFile: FSFile = {
     type: 'file',
     ext: 'txt',
-    size: content.length
+    size: content.length,
+    content: content
   }
   
   folder.children[filename] = newFile
+  saveFileSystem(root)
   return true
 }
 
@@ -125,25 +196,103 @@ function updateFile(root: FSFolder, path: string[], filename: string, content: s
   if (!file || file.type !== 'file') return false
   
   file.size = content.length
+  file.content = content
+  saveFileSystem(root)
   return true
 }
 
-function generateUniqueFilename(baseName: string, existingFiles: string[]): string {
-  if (!existingFiles.includes(baseName)) {
-    return baseName
+// Recycle bin operations
+function moveToRecycleBin(root: FSFolder, itemPath: string[], itemName: string): boolean {
+  // Get the source folder
+  const sourceFolder = getNodeByPath(root, itemPath)
+  if (!sourceFolder || sourceFolder.type !== 'folder') return false
+  
+  // Get the item to move
+  const item = sourceFolder.children[itemName]
+  if (!item) return false
+  
+  // Create recycle bin if it doesn't exist
+  if (!root.children['Recycle Bin']) {
+    root.children['Recycle Bin'] = {
+      type: 'folder',
+      children: {}
+    }
   }
   
-  const nameWithoutExt = baseName.replace(/\.txt$/, '')
-  let counter = 1
-  let newName = `${nameWithoutExt} (${counter}).txt`
+  // Add timestamp to avoid name conflicts
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const recycledName = `${itemName}_${timestamp}`
   
-  while (existingFiles.includes(newName)) {
-    counter++
-    newName = `${nameWithoutExt} (${counter}).txt`
+  // Move item to recycle bin with metadata
+  const recycledItem: RecycledNode = {
+    ...item,
+    originalPath: itemPath,
+    originalName: itemName,
+    deletedAt: new Date().toISOString()
   }
   
-  return newName
+  const recycleBin = root.children['Recycle Bin'] as FSFolder
+  recycleBin.children[recycledName] = recycledItem
+  
+  // Remove from original location
+  delete sourceFolder.children[itemName]
+  
+  saveFileSystem(root)
+  return true
 }
+
+function restoreFromRecycleBin(root: FSFolder, recycledName: string): boolean {
+  const recycleBin = root.children['Recycle Bin']
+  if (!recycleBin || recycleBin.type !== 'folder') return false
+  
+  const recycledItem = recycleBin.children[recycledName] as RecycledNode
+  if (!recycledItem) return false
+  
+  // Get original location
+  const originalPath = recycledItem.originalPath || []
+  const originalName = recycledItem.originalName || recycledName
+  
+  // Get or create the destination folder
+  let destinationFolder = root
+  if (originalPath.length > 0) {
+    const destNode = getNodeByPath(root, originalPath)
+    if (!destNode || destNode.type !== 'folder') return false
+    destinationFolder = destNode
+  }
+  
+  // Restore the item (remove recycle bin metadata)
+  const restoredItem: FSNode = recycledItem.type === 'file' ? {
+    type: 'file',
+    ext: recycledItem.ext,
+    size: recycledItem.size,
+    content: recycledItem.content
+  } : {
+    type: 'folder',
+    children: (recycledItem as RecycledFolder).children
+  }
+  
+  destinationFolder.children[originalName] = restoredItem
+  
+  // Remove from recycle bin
+  delete recycleBin.children[recycledName]
+  
+  saveFileSystem(root)
+  return true
+}
+
+function emptyRecycleBin(root: FSFolder): boolean {
+  if (root.children['Recycle Bin']) {
+    root.children['Recycle Bin'] = {
+      type: 'folder',
+      children: {}
+    }
+    saveFileSystem(root)
+    return true
+  }
+  return false
+}
+
+// Removed unused function generateUniqueFilename
 
 function Windows95Raised({ className, children }: { className?: string; children?: React.ReactNode }) {
   return (
@@ -289,6 +438,10 @@ function DesktopIcon({
   selected = false,
   onSelect = () => {},
   className,
+  draggable = false,
+  onStartDrag,
+  dragItem,
+  iconKey,
 }: {
   title?: string
   onOpen?: () => void
@@ -298,8 +451,14 @@ function DesktopIcon({
   selected?: boolean
   onSelect?: () => void
   className?: string
+  draggable?: boolean
+  onStartDrag?: (item: DragItem, position: Vec2) => void
+  dragItem?: DragItem
+  iconKey?: string
 }) {
   const lastClickRef = useRef(0)
+  const dragStartRef = useRef<Vec2 | null>(null)
+  
   const handleClick = () => {
     const now = Date.now()
     if (now - lastClickRef.current < 300) {
@@ -310,16 +469,48 @@ function DesktopIcon({
     lastClickRef.current = now
   }
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!draggable || !dragItem || !onStartDrag) return
+    
+    dragStartRef.current = { x: e.clientX, y: e.clientY }
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragStartRef.current) return
+      
+      const deltaX = Math.abs(e.clientX - dragStartRef.current.x)
+      const deltaY = Math.abs(e.clientY - dragStartRef.current.y)
+      
+      // Start drag if moved more than 5 pixels
+      if (deltaX > 5 || deltaY > 5) {
+        onStartDrag(dragItem, { x: e.clientX, y: e.clientY })
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+    
+    const handleMouseUp = () => {
+      dragStartRef.current = null
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
+
   return (
     <button
       onClick={handleClick}
+      onMouseDown={handleMouseDown}
       className={cn(
         'flex flex-col items-center justify-start gap-1 p-1.5 rounded outline-none focus:ring-2 focus:ring-emerald-400 w-22 h-26',
         { 'bg-black/20': selected },
+        { 'cursor-grab active:cursor-grabbing': draggable },
         className
       )}
       aria-label={title}
       title={title}
+      data-icon={iconKey}
     >
       {imgSrc ? (
         <Image
@@ -607,13 +798,19 @@ function StartMenuItem({
 
 function NotepadApp({ 
   text = 'Welcome to Windows 95 Notepad (demo).',
-  onDesktopUpdate
+  onDesktopUpdate,
+  onCreateFile,
+  onUpdateFile,
+  initialCurrentFile
 }: { 
   text?: string
   onDesktopUpdate?: () => void
+  onCreateFile?: (path: string[], filename: string, content: string) => boolean
+  onUpdateFile?: (path: string[], filename: string, content: string) => boolean
+  initialCurrentFile?: string
 }) {
   const [content, setContent] = useState(text)
-  const [currentFile, setCurrentFile] = useState<string | null>(null)
+  const [currentFile, setCurrentFile] = useState<string | null>(initialCurrentFile || null)
   const [isModified, setIsModified] = useState(false)
 
   const handleNew = () => {
@@ -626,6 +823,21 @@ function NotepadApp({
     setContent('')
     setCurrentFile(null)
     setIsModified(false)
+  }
+
+  const handleSave = () => {
+    if (currentFile) {
+      // Save current file
+      if (onUpdateFile?.(['C:', 'Desktop'], currentFile, content) ?? false) {
+        setIsModified(false)
+        alert(`File "${currentFile}" saved`)
+      } else {
+        alert('Error saving file')
+      }
+    } else {
+      // No current file, use Save As
+      handleSaveAs()
+    }
   }
 
   const handleSaveAs = () => {
@@ -657,7 +869,12 @@ function NotepadApp({
         }
       }
       
-      if (createFile(FS_ROOT, ['C:', 'Desktop'], fullFilename, content)) {
+      // If it's the same file, update it; otherwise create new
+      const success = fullFilename === currentFile 
+        ? (onUpdateFile?.(['C:', 'Desktop'], fullFilename, content) ?? false)
+        : (onCreateFile?.(['C:', 'Desktop'], fullFilename, content) ?? false)
+      
+      if (success) {
         setCurrentFile(fullFilename)
         setIsModified(false)
         alert(`File saved as "${fullFilename}" on Desktop`)
@@ -689,6 +906,12 @@ function NotepadApp({
               New
             </button>
             <button
+              onClick={handleSave}
+              className="px-2 py-0.5 text-xs bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white"
+            >
+              Save
+            </button>
+            <button
               onClick={handleSaveAs}
               className="px-2 py-0.5 text-xs bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white"
             >
@@ -709,10 +932,124 @@ function NotepadApp({
   )
 }
 
-function RecycleBinApp() {
+function RecycleBinApp({ 
+  root = FS_ROOT,
+  onFileSystemUpdate,
+  dragState,
+  onDrop
+}: { 
+  root?: FSFolder
+  onFileSystemUpdate?: () => void
+  dragState?: DragState
+  onDrop?: (item: DragItem) => void
+}) {
+  const [isDragOver, setIsDragOver] = useState(false)
+  
+  const recycleBin = root.children['Recycle Bin']
+  const items = recycleBin && recycleBin.type === 'folder' ? Object.entries(recycleBin.children) : []
+  
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(true)
+  }
+  
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+  }
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    
+    if (dragState?.item && onDrop) {
+      onDrop(dragState.item)
+    }
+  }
+  
+  const handleRestore = (recycledName: string) => {
+    if (restoreFromRecycleBin(root, recycledName)) {
+      onFileSystemUpdate?.()
+    }
+  }
+  
+  const handleEmpty = () => {
+    if (confirm('Are you sure you want to empty the Recycle Bin? This action cannot be undone.')) {
+      if (emptyRecycleBin(root)) {
+        onFileSystemUpdate?.()
+      }
+    }
+  }
+  
   return (
-    <div className="w-full h-full p-3 bg-[#dcdcdc]">
-      <div className="text-sm">The Recycle Bin is empty.</div>
+    <div className="w-full h-full flex flex-col">
+      {/* Toolbar */}
+      <Windows95Raised className="px-2 py-1 mb-1">
+        <div className="flex items-center justify-between">
+          <div className="text-xs">File Edit View Help</div>
+          <div className="flex gap-1">
+            <button
+              onClick={handleEmpty}
+              disabled={items.length === 0}
+              className="px-2 py-0.5 text-xs bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white disabled:opacity-50"
+            >
+              Empty Recycle Bin
+            </button>
+          </div>
+        </div>
+      </Windows95Raised>
+      
+      {/* Content area */}
+      <div 
+        className={cn(
+          "flex-1 p-3 bg-[#dcdcdc] overflow-auto",
+          isDragOver && "bg-blue-200 border-2 border-dashed border-blue-400"
+        )}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {items.length === 0 ? (
+          <div className="text-sm text-gray-600">The Recycle Bin is empty.</div>
+        ) : (
+          <div className="space-y-2">
+            <div className="text-sm font-semibold mb-2">Recycled Items ({items.length})</div>
+            {items.map(([recycledName, item]) => {
+              const recycledItem = item as RecycledNode
+              const displayName = recycledItem.originalName || recycledName
+              const isFolder = recycledItem.type === 'folder'
+              
+              return (
+                <div 
+                  key={recycledName}
+                  className="flex items-center justify-between p-2 bg-white border border-gray-300 rounded"
+                >
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src={isFolder ? '/icons/closed_folder.webp' : getFileIcon(displayName)}
+                      alt={displayName}
+                      width={16}
+                      height={16}
+                      className="w-4 h-4 object-contain"
+                      draggable={false}
+                    />
+                    <span className="text-sm">{displayName}</span>
+                    <span className="text-xs text-gray-500">
+                      (from {recycledItem.originalPath?.join('\\') || 'Desktop'})
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleRestore(recycledName)}
+                    className="px-2 py-1 text-xs bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white"
+                  >
+                    Restore
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -724,14 +1061,107 @@ function AboutApp() {
         <div className="font-bold">Windows 95 Desktop (Replica)</div>
         <div>Built with Next.js App Router, Tailwind CSS, and lucide-react icons.</div>
       </div>
+      
+      {/* EDITABLE CONTENT SECTION - Replace this paragraph with your own text */}
+      <Windows95Raised className="p-3 mb-3">
+        <div className="font-semibold mb-2">About This Project</div>
+        <p className="text-sm leading-relaxed">
+          Hi, my name is Liam. I&apos;m a Computer Science and Business student at Trinity College Dublin. I built this as a fun project to learn more about web development and design, and to showcase the projects I&apos;ve worked on.
+
+          Last updated: 17/08/2025, 21:31:40
+        </p>
+      </Windows95Raised>
+      
       <Windows95Raised className="p-3">
-        <ul className="list-disc pl-5">
+        <div className="font-semibold mb-2">Features</div>
+        <ul className="list-disc pl-5 text-sm">
           <li>Drag windows by the title bar</li>
           <li>Minimize/restore via titlebar or taskbar</li>
           <li>Double-click desktop icons to open apps</li>
           <li>Browse folders in File Explorer</li>
+          <li>Drag and drop items to Recycle Bin</li>
+          <li>Create and edit text files in Notepad</li>
         </ul>
       </Windows95Raised>
+    </div>
+  )
+}
+
+function ImageViewerApp({ 
+  filePath = '/files/Pictures/Image of Liam.jpg',
+  currentFile = 'Image of Liam.jpg'
+}: { 
+  filePath?: string
+  currentFile?: string
+}) {
+  return (
+    <div className="w-full h-full flex flex-col">
+      {/* Toolbar */}
+      <Windows95Raised className="px-2 py-1 mb-1">
+        <div className="flex items-center justify-between">
+          <div className="text-xs">File Edit View Help</div>
+          <div className="flex gap-1">
+            <button
+              className="px-2 py-0.5 text-xs bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white"
+              onClick={() => window.open(filePath, '_blank')}
+            >
+              Open in New Tab
+            </button>
+          </div>
+        </div>
+      </Windows95Raised>
+      
+      {/* Image display area */}
+      <div className="flex-1 bg-white p-2 overflow-auto">
+        <div className="w-full h-full flex items-center justify-center">
+          <Image
+            src={filePath}
+            alt={currentFile}
+            width={800}
+            height={600}
+            className="max-w-full max-h-full object-contain"
+            draggable={false}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PDFViewerApp({ 
+  filePath = '/files/Documents/CV.pdf',
+  currentFile = 'CV/Resume.pdf'
+}: { 
+  filePath?: string
+  currentFile?: string
+}) {
+  return (
+    <div className="w-full h-full flex flex-col">
+      {/* Toolbar */}
+      <Windows95Raised className="px-2 py-1 mb-1">
+        <div className="flex items-center justify-between">
+          <div className="text-xs">File Edit View Help</div>
+          <div className="flex gap-1">
+            <button
+              className="px-2 py-0.5 text-xs bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white"
+              onClick={() => window.open(filePath, '_blank')}
+            >
+              Open in New Tab
+            </button>
+          </div>
+        </div>
+      </Windows95Raised>
+      
+      {/* PDF display area */}
+      <div className="flex-1 bg-white p-2 overflow-auto">
+        <div className="w-full h-full">
+          <iframe
+            src={filePath}
+            className="w-full h-full border-none"
+            title={currentFile}
+          />
+        </div>
+      </div>
     </div>
   )
 }
@@ -740,19 +1170,33 @@ function AboutApp() {
 type ExplorerProps = {
   initialPath?: string[]
   root?: FSFolder
+  onOpenApp?: (type: WindowType, payload?: WindowPayload) => void
+  refreshTrigger?: number
+  onStartDrag?: (item: DragItem, position: Vec2) => void
+  onDragMove?: (position: Vec2) => void
+  onEndDrag?: () => void
 }
 
-function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
+function FileExplorerApp({ initialPath = [], root = FS_ROOT, onOpenApp, refreshTrigger, onStartDrag }: ExplorerProps) {
   // path: [] => "My Computer" (virtual root)
   const [path, setPath] = useState<string[]>([])
-  const [forceUpdate, setForceUpdate] = useState(0)
+  const [manuallyExpandedFolders, setManuallyExpandedFolders] = useState<Set<string>>(new Set())
+  const [manuallyCollapsedFolders, setManuallyCollapsedFolders] = useState<Set<string>>(new Set())
   
   // Only set initial path once on mount
   useEffect(() => {
     if (initialPath.length > 0) {
       setPath(initialPath)
     }
-  }, []) // Empty dependency array - only run once
+  }, [initialPath]) // Include initialPath in dependencies
+  
+  // Force refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger) {
+      // Trigger re-render by updating path
+      setPath(prev => [...prev])
+    }
+  }, [refreshTrigger])
   const currentNode = useMemo(() => {
     const node = path.length === 0 ? root : getNodeByPath(root, path)
     console.log('Current node calculated:', { path, nodeType: node?.type, hasChildren: node?.type === 'folder' ? Object.keys(node.children).length : 0 })
@@ -793,11 +1237,111 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
       console.log('Opening folder:', name)
       setPath((p) => [...p, name])
     } else {
-      // File: For demo, just show the filename
+      // File: Handle different file types
       console.log('Opening file:', name)
-      alert(`Opening file: ${name}`)
+      
+      // Handle desktop icon shortcuts (.lnk files)
+      if (name.endsWith('.lnk')) {
+        const iconName = name.replace('.lnk', '')
+        switch (iconName) {
+          case 'My Computer':
+            onOpenApp?.('file-explorer', { initialPath: [] })
+            break
+          case 'Documents':
+            onOpenApp?.('file-explorer', { initialPath: ['C:', 'Documents'] })
+            break
+          case 'Notepad':
+            onOpenApp?.('notepad')
+            break
+          case 'Recycle Bin':
+            onOpenApp?.('recycle-bin')
+            break
+          case 'About':
+            onOpenApp?.('about')
+            break
+          default:
+            alert(`Opening shortcut: ${name}`)
+        }
+      } else {
+        // Handle different file types
+        if (name.endsWith('.txt')) {
+          // Open .txt files in Notepad with their content
+          const fileContent = target.content || ''
+          onOpenApp?.('notepad', { text: fileContent, currentFile: name })
+        } else if (name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png')) {
+          // Open image files in image viewer
+          const filePath = `/files/Pictures/${name}`
+          onOpenApp?.('image-viewer', { filePath, fileType: 'image', currentFile: name })
+        } else if (name.endsWith('.pdf')) {
+          // Open PDF files in PDF viewer
+          // Handle nested folder structure for CV/Resume.pdf
+          const filePath = name === 'CV/Resume.pdf' ? `/files/Documents/CV.pdf` : `/files/Documents/${name}`
+          onOpenApp?.('pdf-viewer', { filePath, fileType: 'pdf', currentFile: name })
+        } else {
+          alert(`Opening file: ${name}`)
+        }
+      }
     }
   }
+
+  // Tree folder handlers
+  const handlePathChange = (newPath: string[]) => {
+    console.log('🔄 handlePathChange called with:', newPath)
+    setPath(newPath)
+  }
+
+  const handleForceUpdate = () => {
+    console.log('🔄 handleForceUpdate called')
+    // Trigger re-render by updating path
+    setPath(prev => [...prev])
+  }
+
+  const handleToggleExpanded = (folderKey: string, isOpen: boolean) => {
+    console.log('🔄 handleToggleExpanded called:', { folderKey, isOpen })
+    
+    if (isOpen) {
+      // Expanding: remove from collapsed set, add to expanded set
+      setManuallyCollapsedFolders(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(folderKey)
+        console.log('➖ Removed folder from manually collapsed:', folderKey)
+        return newSet
+      })
+      setManuallyExpandedFolders(prev => {
+        const newSet = new Set(prev)
+        newSet.add(folderKey)
+        console.log('➕ Added folder to manually expanded:', folderKey)
+        return newSet
+      })
+    } else {
+      // Collapsing: remove from expanded set, add to collapsed set
+      setManuallyExpandedFolders(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(folderKey)
+        console.log('➖ Removed folder from manually expanded:', folderKey)
+        return newSet
+      })
+      setManuallyCollapsedFolders(prev => {
+        const newSet = new Set(prev)
+        newSet.add(folderKey)
+        console.log('➕ Added folder to manually collapsed:', folderKey)
+        return newSet
+      })
+    }
+  }
+
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('📊 Current path changed to:', path)
+  }, [path])
+
+  useEffect(() => {
+    console.log('📊 Manually expanded folders changed to:', Array.from(manuallyExpandedFolders))
+  }, [manuallyExpandedFolders])
+
+  useEffect(() => {
+    console.log('📊 Manually collapsed folders changed to:', Array.from(manuallyCollapsedFolders))
+  }, [manuallyCollapsedFolders])
 
   const breadcrumb = useMemo(() => {
     if (path.length === 0) return ['My Computer']
@@ -814,76 +1358,124 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
     label,
     node,
     fullPath,
+    currentPath,
+    onPathChange,
+    onForceUpdate,
+    manuallyExpandedSet,
+    manuallyCollapsedSet,
+    onToggleExpanded,
   }: {
     label: string
     node: FSNode
     fullPath: string[]
+    currentPath: string[]
+    onPathChange: (path: string[]) => void
+    onForceUpdate: () => void
+    manuallyExpandedSet: Set<string>
+    manuallyCollapsedSet: Set<string>
+    onToggleExpanded: (folderKey: string, isOpen: boolean) => void
   }) {
+    const folderKey = fullPath.join('/')
+    
+    // Check if manually expanded or collapsed
+    const isManuallyExpanded = manuallyExpandedSet.has(folderKey)
+    const isManuallyCollapsed = manuallyCollapsedSet.has(folderKey)
+    
     // Auto-expand if this folder is in the current path or is a parent of the current path
-    const shouldBeOpen = fullPath.length <= 1 || path.some((_, index) => 
-      path.slice(0, index + 1).join('/') === fullPath.join('/')
+    const shouldBeOpen = fullPath.length <= 1 || currentPath.some((_, index) => 
+      currentPath.slice(0, index + 1).join('/') === fullPath.join('/')
     )
-    const [open, setOpen] = useState(shouldBeOpen)
     
-    // Update open state when path changes
+    // Determine if folder should be open
+    // Manual collapse takes precedence over auto-expansion
+    // Manual expansion takes precedence over auto-collapse
+    const isOpen = isManuallyExpanded || (shouldBeOpen && !isManuallyCollapsed)
+    
+    // Auto-add to manually expanded set if it's part of the current path and not manually collapsed
     useEffect(() => {
-      if (shouldBeOpen && !open) {
-        setOpen(true)
+      if (shouldBeOpen && !isManuallyExpanded && !isManuallyCollapsed) {
+        console.log('🔄 Auto-adding to manually expanded:', folderKey)
+        onToggleExpanded(folderKey, true)
       }
-    }, [path, shouldBeOpen, open])
+    }, [shouldBeOpen, isManuallyExpanded, isManuallyCollapsed, folderKey, onToggleExpanded])
     
-    const isActive = fullPath.join('/') === path.join('/')
+    const isActive = fullPath.join('/') === currentPath.join('/')
 
     if (node.type !== 'folder') return null
     const entries = Object.entries(node.children)
 
-    console.log('Rendering TreeFolder:', label, 'fullPath:', fullPath, 'isActive:', isActive)
+    console.log('🌳 TreeFolder render:', {
+      label,
+      folderKey,
+      fullPath,
+      currentPath,
+      shouldBeOpen,
+      isManuallyExpanded,
+      isManuallyCollapsed,
+      isOpen,
+      isActive,
+      manuallyExpandedSetSize: manuallyExpandedSet.size,
+      manuallyCollapsedSetSize: manuallyCollapsedSet.size
+    })
 
-    return (
-      <div className="select-none">
-        <div
-          className={cn(
-            'w-full text-left px-1 py-0.5 text-xs rounded hover:bg-[#bdbdbd] flex items-center gap-1 cursor-pointer select-none',
-            isActive && 'bg-[#9c9c9c]'
-          )}
-          onMouseDown={(e) => {
+      return (
+    <div className="select-none">
+      <div
+        className={cn(
+          'w-full text-left px-1 py-0.5 text-xs rounded hover:bg-[#bdbdbd] flex items-center gap-1 select-none',
+          isActive && 'bg-[#9c9c9c]'
+        )}
+        onMouseDown={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          console.log('Tree item mouse down:', label, 'Path:', fullPath)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            e.stopPropagation()
-            console.log('Tree item mouse down:', label, 'Path:', fullPath)
-          }}
+            console.log('Tree item keyboard activated:', label, 'Path:', fullPath)
+            onPathChange(fullPath)
+            onForceUpdate()
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`Folder ${label}`}
+      >
+        <button
+          className="flex items-center justify-center w-3 h-3 hover:bg-[#9c9c9c] rounded"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            console.log('Tree item clicked:', label, 'Path:', fullPath, 'Current path before:', path)
-            setPath(() => {
-              console.log('Setting path to:', fullPath)
-              return fullPath
-            })
-            setForceUpdate(prev => prev + 1)
-            console.log('setPath called with:', fullPath)
+            console.log('🖱️ Arrow clicked for:', { label, folderKey, currentIsOpen: isOpen })
+            const newOpenState = !isOpen
+            console.log('🔄 Setting new open state:', newOpenState)
+            onToggleExpanded(folderKey, newOpenState)
           }}
-          onDoubleClick={() => {
-            console.log('Tree item double-clicked:', label)
-            setOpen((o) => !o)
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              console.log('Tree item keyboard activated:', label, 'Path:', fullPath)
-              setPath(() => {
-                console.log('Setting path to:', fullPath)
-                return fullPath
-              })
-              setForceUpdate(prev => prev + 1)
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label={`Folder ${label}`}
+          aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${label}`}
         >
           <ChevronRight
-            className={cn('w-3 h-3 transition-transform', open && 'rotate-90')}
+            className={cn('w-3 h-3 transition-transform', isOpen && 'rotate-90')}
           />
+        </button>
+        <button
+          className="flex items-center gap-1 flex-1 cursor-pointer"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            console.log('Tree item clicked:', label, 'Path:', fullPath, 'Current path before:', currentPath)
+            
+            // If this folder is currently manually expanded, keep it expanded
+            if (isManuallyExpanded) {
+              console.log('🔄 Keeping folder manually expanded:', folderKey)
+            }
+            
+            onPathChange(fullPath)
+            onForceUpdate()
+            console.log('setPath called with:', fullPath)
+          }}
+          aria-label={`Navigate to ${label}`}
+        >
           <Image
             src="/icons/closed_folder.webp"
             alt={label}
@@ -893,14 +1485,55 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
             draggable={false}
           />
           <span className="truncate">{label}</span>
-        </div>
-        {open && (
+        </button>
+      </div>
+        {isOpen && (
           <div className="pl-4">
-            {entries.map(([name, child]) =>
-              child.type === 'folder' ? (
-                <TreeFolder key={name} label={name} node={child} fullPath={[...fullPath, name]} />
-              ) : null
-            )}
+            {entries.map(([name, child]) => {
+              if (child.type === 'folder') {
+                return (
+                  <TreeFolder 
+                    key={name} 
+                    label={name} 
+                    node={child} 
+                    fullPath={[...fullPath, name]}
+                    currentPath={currentPath}
+                    onPathChange={onPathChange}
+                    onForceUpdate={onForceUpdate}
+                    manuallyExpandedSet={manuallyExpandedSet}
+                    manuallyCollapsedSet={manuallyCollapsedSet}
+                    onToggleExpanded={onToggleExpanded}
+                  />
+                )
+              } else {
+                // Show files in the tree view
+                return (
+                  <div
+                    key={name}
+                    className="w-full text-left px-1 py-0.5 text-xs rounded hover:bg-[#bdbdbd] flex items-center gap-1 cursor-pointer select-none"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      openItem(name)
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`File ${name}`}
+                  >
+                    <div className="w-3 h-3" /> {/* Spacer for alignment */}
+                    <Image
+                      src={getFileIcon(name)}
+                      alt={name}
+                      width={14}
+                      height={14}
+                      className="w-3.5 h-3.5 object-contain"
+                      draggable={false}
+                    />
+                    <span className="truncate">{name.endsWith('.lnk') ? name.replace('.lnk', '') : name}</span>
+                  </div>
+                )
+              }
+            })}
           </div>
         )}
       </div>
@@ -908,18 +1541,7 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
   }
 
   const rightPaneItems = useMemo(() => {
-    console.log('Calculating rightPaneItems for path:', path)
-    if (path.length === 0) {
-      // Drives
-      const drives = Object.keys(root.children).map((drive) => ({
-        name: drive,
-        type: 'drive' as const,
-      }))
-      console.log('Showing drives:', drives)
-      return drives
-    }
     if (!currentNode || currentNode.type !== 'folder') {
-      console.log('No current node or not a folder')
       return []
     }
     const items = Object.entries(currentNode.children).map(([name, node]) => ({
@@ -929,7 +1551,7 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
     }))
     console.log('Showing items:', items)
     return items
-  }, [currentNode, path, root, forceUpdate])
+  }, [currentNode])
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -1023,7 +1645,18 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
             {/* Drives */}
             <div className="pl-4 mt-1">
               {Object.entries(root.children).map(([drive, node]) => (
-                <TreeFolder key={drive} label={drive} node={node} fullPath={[drive]} />
+                <TreeFolder 
+                  key={drive} 
+                  label={drive} 
+                  node={node} 
+                  fullPath={[drive]}
+                  currentPath={path}
+                  onPathChange={handlePathChange}
+                  onForceUpdate={handleForceUpdate}
+                  manuallyExpandedSet={manuallyExpandedFolders}
+                  manuallyCollapsedSet={manuallyCollapsedFolders}
+                  onToggleExpanded={handleToggleExpanded}
+                />
               ))}
             </div>
           </div>
@@ -1033,11 +1666,12 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
             <div className="h-full w-fit flex flex-col flex-wrap content-start items-start gap-y-2 gap-x-4">
               {rightPaneItems.map((item) => {
                 const isFolder = item.type === 'folder' || item.type === 'drive'
-                const iconSrc = isFolder ? '/icons/closed_folder.webp' : '/icons/text_file.webp'
+                const iconSrc = isFolder ? '/icons/closed_folder.webp' : getFileIcon(item.name)
+                
                 return (
                   <button
                     key={item.name}
-                    className="w-28 h-20 flex flex-col items-center justify-center gap-1 rounded hover:bg-[#bdbdbd] focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    className="w-28 h-20 flex flex-col items-center justify-center gap-1 rounded hover:bg-[#bdbdbd] focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-grab active:cursor-grabbing"
                     onDoubleClick={() => {
                       console.log('Double-clicked:', item.name)
                       openItem(item.name)
@@ -1045,6 +1679,38 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
                     onClick={() => {
                       console.log('Single-clicked:', item.name)
                       // For single click, we could add selection highlighting
+                    }}
+                    onMouseDown={(e) => {
+                      if (!onStartDrag) return
+                      
+                      const dragStart = { x: e.clientX, y: e.clientY }
+                      
+                      const handleMouseMove = (e: MouseEvent) => {
+                        const deltaX = Math.abs(e.clientX - dragStart.x)
+                        const deltaY = Math.abs(e.clientY - dragStart.y)
+                        
+                        // Start drag if moved more than 5 pixels
+                        if (deltaX > 5 || deltaY > 5) {
+                          const dragItem: DragItem = {
+                            type: 'file-explorer-item',
+                            name: item.name,
+                            path: path,
+                            isFolder: item.type === 'folder',
+                            originalLocation: path
+                          }
+                          onStartDrag(dragItem, { x: e.clientX, y: e.clientY })
+                          document.removeEventListener('mousemove', handleMouseMove)
+                          document.removeEventListener('mouseup', handleMouseUp)
+                        }
+                      }
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove)
+                        document.removeEventListener('mouseup', handleMouseUp)
+                      }
+                      
+                      document.addEventListener('mousemove', handleMouseMove)
+                      document.addEventListener('mouseup', handleMouseUp)
                     }}
                     aria-label={`Open ${item.name}`}
                     title={item.name}
@@ -1058,7 +1724,7 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
                       draggable={false}
                     />
                     <span className="text-xs text-black text-center truncate w-full leading-tight">
-                      {item.name}
+                      {item.name.endsWith('.lnk') ? item.name.replace('.lnk', '') : item.name}
                     </span>
                   </button>
                 )
@@ -1077,7 +1743,62 @@ export default function Page() {
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null)
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false)
   const [desktopUpdateTrigger, setDesktopUpdateTrigger] = useState(0)
+  const [fileSystem, setFileSystem] = useState<FSFolder>(DEFAULT_FS_ROOT)
+  const [isClient, setIsClient] = useState(false)
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    item: null,
+    position: { x: 0, y: 0 }
+  })
   const viewport = useViewportSize()
+
+  // Track if we've already initialized
+  const initializedRef = useRef(false)
+
+  // Load file system from localStorage only on client side
+  useEffect(() => {
+    if (initializedRef.current) return
+    
+    setIsClient(true)
+    const savedFS = loadFileSystem()
+    setFileSystem(savedFS)
+    
+    // Open About window by default
+    const aboutId = `about-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const aboutWindow: WinInstance = {
+      id: aboutId,
+      title: 'About Windows',
+      type: 'about',
+      minimized: false,
+      z: next(),
+      position: { x: 580, y: 180 }, // Positioned to the right of desktop icons
+      size: { w: 720, h: 720 }, // Twice as large as default
+    }
+    setWindows([aboutWindow])
+    
+    initializedRef.current = true
+  }, [next])
+
+  // Global mouse event handlers for drag
+  useEffect(() => {
+    if (!dragState.isDragging) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      handleDragMove({ x: e.clientX, y: e.clientY })
+    }
+
+    const handleMouseUp = () => {
+      handleEndDrag()
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [dragState.isDragging])
 
   const bringToFront = (id: string) => {
     const zTop = next()
@@ -1118,7 +1839,61 @@ export default function Page() {
     setDesktopUpdateTrigger(prev => prev + 1)
   }
 
-  const openApp = (type: WindowType, payload?: WindowPayload) => {
+  // Drag and drop handlers
+  const handleStartDrag = (item: DragItem, position: Vec2) => {
+    setDragState({
+      isDragging: true,
+      item,
+      position
+    })
+  }
+
+  const handleDragMove = (position: Vec2) => {
+    setDragState(prev => ({
+      ...prev,
+      position
+    }))
+  }
+
+  const handleEndDrag = () => {
+    setDragState({
+      isDragging: false,
+      item: null,
+      position: { x: 0, y: 0 }
+    })
+  }
+
+  const handleDropToRecycleBin = (item: DragItem) => {
+    console.log('Dropping item to recycle bin:', item)
+    const success = moveToRecycleBin(fileSystem, item.originalLocation, item.name)
+    if (success) {
+      setFileSystem({ ...fileSystem })
+      triggerDesktopUpdate()
+      alert(`"${item.name}" has been moved to the Recycle Bin.`)
+    } else {
+      alert('Failed to move item to Recycle Bin.')
+    }
+    handleEndDrag()
+  }
+
+  // Wrapper functions that update both state and localStorage
+  const createFilePersistent = (path: string[], filename: string, content: string): boolean => {
+    const success = createFile(fileSystem, path, filename, content)
+    if (success) {
+      setFileSystem({ ...fileSystem })
+    }
+    return success
+  }
+
+  const updateFilePersistent = (path: string[], filename: string, content: string): boolean => {
+    const success = updateFile(fileSystem, path, filename, content)
+    if (success) {
+      setFileSystem({ ...fileSystem })
+    }
+    return success
+  }
+
+  const openApp = useCallback((type: WindowType, payload?: WindowPayload) => {
     const id = `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     const base: WinInstance = {
       id,
@@ -1129,16 +1904,24 @@ export default function Page() {
           ? 'Notepad'
           : type === 'recycle-bin'
           ? 'Recycle Bin'
-          : 'About Windows',
+          : type === 'image-viewer'
+          ? `Image Viewer - ${payload?.currentFile || 'Image'}`
+          : type === 'pdf-viewer'
+          ? `PDF Viewer - ${payload?.currentFile || 'PDF'}`
+          : 'About',
       type,
       minimized: false,
       z: next(),
       position: randPosition(windows.length * 12),
-      size: type === 'file-explorer' ? { w: 760, h: 520 } : { w: 520, h: 360 },
+      size: type === 'file-explorer' ? { w: 760, h: 520 } : 
+            type === 'about' ? { w: 720, h: 720 } : 
+            type === 'image-viewer' ? { w: 800, h: 600 } :
+            type === 'pdf-viewer' ? { w: 800, h: 600 } :
+            { w: 520, h: 360 },
       payload,
     }
     setWindows((ws) => [...ws, base])
-  }
+  }, [next, windows.length])
 
   const handleStartClick = () => {
     setIsStartMenuOpen(!isStartMenuOpen)
@@ -1151,81 +1934,114 @@ export default function Page() {
   const renderContent = (w: WinInstance) => {
     switch (w.type) {
       case 'file-explorer':
-        return <FileExplorerApp initialPath={(w.payload?.initialPath as string[]) || []} />
+        return <FileExplorerApp 
+          initialPath={(w.payload?.initialPath as string[]) || []} 
+          root={fileSystem}
+          onOpenApp={openApp}
+          refreshTrigger={desktopUpdateTrigger}
+          onStartDrag={handleStartDrag}
+          onDragMove={handleDragMove}
+          onEndDrag={handleEndDrag}
+        />
       case 'notepad':
         return <NotepadApp 
           text={w.payload?.text || 'Hello from Notepad.\n\nThis is a demo.'} 
           onDesktopUpdate={triggerDesktopUpdate}
+          onCreateFile={createFilePersistent}
+          onUpdateFile={updateFilePersistent}
+          initialCurrentFile={w.payload?.currentFile}
         />
       case 'recycle-bin':
-        return <RecycleBinApp />
+        return <RecycleBinApp 
+          root={fileSystem}
+          onFileSystemUpdate={() => {
+            setFileSystem({ ...fileSystem })
+            triggerDesktopUpdate()
+          }}
+          dragState={dragState}
+          onDrop={handleDropToRecycleBin}
+        />
       case 'about':
         return <AboutApp />
+      case 'image-viewer':
+        return <ImageViewerApp 
+          filePath={w.payload?.filePath}
+          currentFile={w.payload?.currentFile}
+        />
+      case 'pdf-viewer':
+        return <PDFViewerApp 
+          filePath={w.payload?.filePath}
+          currentFile={w.payload?.currentFile}
+        />
       default:
         return null
     }
   }
 
-  // Get desktop files for dynamic icons
-  const desktopFiles = useMemo(() => {
-    const desktopFolder = getNodeByPath(FS_ROOT, ['C:', 'Desktop'])
-    if (!desktopFolder || desktopFolder.type !== 'folder') return []
+
+
+  // Get all desktop icons from the file system
+  const desktopIcons = useMemo(() => {
+    if (!isClient) return []
     
-    return Object.entries(desktopFolder.children).map(([filename, node]) => ({
-      key: `desktop-file-${filename}`,
-      title: filename,
-      icon: FileText,
-      imgSrc: '/icons/text_file.webp',
-      onOpen: () => {
-        // For demo, just show the filename
-        alert(`Opening file: ${filename}`)
+    const icons: Array<{
+      key: string
+      title: string
+      icon?: React.ComponentType<{ className?: string }>
+      imgSrc?: string
+      onOpen: () => void
+      draggable?: boolean
+      dragItem?: DragItem
+      iconKey?: string
+    }> = [
+      {
+        key: 'my-computer',
+        title: 'My Computer',
+        imgSrc: '/icons/computer.webp',
+        onOpen: () => openApp('file-explorer', { initialPath: [] }),
+        draggable: false,
+        iconKey: 'my-computer'
       },
-    }))
-  }, [desktopUpdateTrigger]) // Update when trigger changes
-
-  const staticDesktopIcons = [
-    {
-      key: 'my-computer',
-      title: 'My Computer',
-      icon: HardDrive,
-      imgSrc: '/icons/computer.webp',
-      onOpen: () => openApp('file-explorer', { initialPath: [] }),
-    },
-    {
-      key: 'documents',
-      title: 'Documents',
-      icon: Folder,
-      imgSrc: '/icons/closed_folder.webp',
-      onOpen: () => openApp('file-explorer', { initialPath: ['C:', 'Documents'] }),
-    },
-    {
-      key: 'notepad',
-      title: 'Notepad',
-      icon: StickyNote,
-      imgSrc: '/icons/notepad.webp',
-      onOpen: () => openApp('notepad'),
-    },
-    {
-      key: 'recycle-bin',
-      title: 'Recycle Bin',
-      icon: Trash2,
-      imgSrc: '/icons/dustbin.webp',
-      onOpen: () => openApp('recycle-bin'),
-    },
-    {
-      key: 'about',
-      title: 'About',
-      icon: Monitor,
-      imgSrc: '/icons/help.webp',
-      onOpen: () => openApp('about'),
-    },
-  ]
-
-  const desktopIcons = [...staticDesktopIcons, ...desktopFiles]
+      {
+        key: 'documents',
+        title: 'Documents',
+        imgSrc: '/icons/closed_folder.webp',
+        onOpen: () => openApp('file-explorer', { initialPath: ['C:', 'Documents'] }),
+        draggable: false,
+        iconKey: 'documents'
+      },
+      {
+        key: 'notepad',
+        title: 'Notepad',
+        imgSrc: '/icons/notepad.webp',
+        onOpen: () => openApp('notepad'),
+        draggable: false,
+        iconKey: 'notepad'
+      },
+      {
+        key: 'recycle-bin',
+        title: 'Recycle Bin',
+        imgSrc: '/icons/dustbin.webp',
+        onOpen: () => openApp('recycle-bin'),
+        draggable: false,
+        iconKey: 'recycle-bin'
+      },
+      {
+        key: 'about',
+        title: 'About',
+        imgSrc: '/icons/help.webp',
+        onOpen: () => openApp('about'),
+        draggable: false,
+        iconKey: 'about'
+      }
+    ]
+    
+    return icons
+  }, [isClient, openApp]) // Only include necessary dependencies
 
   return (
     <main
-      className="relative min-h-screen"
+      className="relative h-screen overflow-hidden"
       // Classic Win95 teal-ish desktop
       style={{ backgroundColor: '#008080' }}
       onClick={(e) => {
@@ -1245,10 +2061,85 @@ export default function Page() {
               onOpen={ic.onOpen}
               selected={selectedIcon === ic.key}
               onSelect={() => setSelectedIcon(ic.key)}
+              draggable={ic.draggable}
+              onStartDrag={ic.draggable ? handleStartDrag : undefined}
+              dragItem={ic.dragItem}
+              iconKey={ic.iconKey}
             />
           ))}
         </div>
       </div>
+
+      {/* Global drag overlay */}
+      {dragState.isDragging && dragState.item && (
+        <div
+          className="fixed pointer-events-none z-[20000] bg-blue-500/20 border-2 border-blue-500 rounded p-2 text-white text-sm"
+          style={{
+            left: dragState.position.x - 20,
+            top: dragState.position.y - 20,
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <Image
+              src={dragState.item.isFolder ? '/icons/closed_folder.webp' : getFileIcon(dragState.item.name)}
+              alt={dragState.item.name}
+              width={16}
+              height={16}
+              className="w-4 h-4 object-contain"
+              draggable={false}
+            />
+            <span>{dragState.item.name}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Global drop detection for Recycle Bin icon */}
+      {dragState.isDragging && (
+        <div
+          className="fixed inset-0 pointer-events-auto z-[15000]"
+          onMouseMove={(e) => {
+            // Check if mouse is over Recycle Bin icon area for visual feedback
+            const recycleBinIcon = document.querySelector('[data-icon="recycle-bin"]')
+            if (recycleBinIcon) {
+              const rect = recycleBinIcon.getBoundingClientRect()
+              const isOverRecycleBin = (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+              )
+              
+              // Add visual feedback
+              if (isOverRecycleBin) {
+                recycleBinIcon.classList.add('ring-4', 'ring-red-500', 'ring-opacity-50')
+              } else {
+                recycleBinIcon.classList.remove('ring-4', 'ring-red-500', 'ring-opacity-50')
+              }
+            }
+          }}
+          onMouseUp={(e) => {
+            // Check if mouse is over Recycle Bin icon area
+            const recycleBinIcon = document.querySelector('[data-icon="recycle-bin"]')
+            if (recycleBinIcon) {
+              const rect = recycleBinIcon.getBoundingClientRect()
+              if (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+              ) {
+                if (dragState.item) {
+                  handleDropToRecycleBin(dragState.item)
+                }
+              }
+              // Remove visual feedback
+              recycleBinIcon.classList.remove('ring-4', 'ring-red-500', 'ring-opacity-50')
+            }
+            // Always end drag
+            handleEndDrag()
+          }}
+        />
+      )}
 
       {/* Windows */}
       {windows.map((w) => (
@@ -1286,4 +2177,34 @@ export default function Page() {
       />
     </main>
   )
+}
+
+// Helper function to get the correct icon for a file based on its extension
+function getFileIcon(filename: string): string {
+  const extension = filename.toLowerCase().split('.').pop()
+  
+  switch (extension) {
+    case 'txt':
+      return '/icons/txt_file.webp'
+    case 'pdf':
+      return '/icons/pdf_file.webp'
+    case 'jpg':
+    case 'jpeg':
+      return '/icons/image_file.webp'
+    case 'png':
+      return '/icons/image_file.webp'
+    case 'lnk':
+      // Handle shortcuts
+      const iconName = filename.replace('.lnk', '')
+      switch (iconName) {
+        case 'My Computer': return '/icons/computer.webp'
+        case 'Documents': return '/icons/closed_folder.webp'
+        case 'Notepad': return '/icons/notepad.webp'
+        case 'Recycle Bin': return '/icons/dustbin.webp'
+        case 'About': return '/icons/help.webp'
+        default: return '/icons/pdf_file.webp'
+      }
+    default:
+      return '/icons/pdf_file.webp'
+  }
 }
