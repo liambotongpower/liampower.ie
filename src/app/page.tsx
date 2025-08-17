@@ -1764,7 +1764,7 @@ export default function Page() {
       minimized: false,
       z: next(),
       position: { x: 580, y: 180 }, // Positioned to the right of desktop icons
-      size: { w: 720, h: 720 }, // Twice as large as default
+      size: { w: 720, h: 520 }, // Reduced height to fit content better
     }
     setWindows([aboutWindow])
     
