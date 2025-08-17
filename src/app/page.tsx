@@ -108,6 +108,7 @@ const DEFAULT_FS_ROOT: FSFolder = {
             'Notepad.lnk': { type: 'file', ext: 'lnk', size: 1024 },
             'Recycle Bin.lnk': { type: 'file', ext: 'lnk', size: 1024 },
             'About.lnk': { type: 'file', ext: 'lnk', size: 1024 },
+            'CV/Resume.pdf': { type: 'file', ext: 'pdf', size: 28_672 },
           },
         },
         Documents: {
@@ -153,6 +154,19 @@ function saveFileSystem(fs: FSFolder) {
   } catch (error) {
     console.error('Error saving file system to localStorage:', error)
   }
+}
+
+// Function to reset file system to default
+function resetFileSystem(): FSFolder {
+  if (typeof window === 'undefined') return DEFAULT_FS_ROOT
+  
+  try {
+    localStorage.removeItem('win95-filesystem')
+  } catch (error) {
+    console.error('Error clearing file system from localStorage:', error)
+  }
+  
+  return DEFAULT_FS_ROOT
 }
 
 // Initialize file system
@@ -1055,6 +1069,13 @@ function RecycleBinApp({
 }
 
 function AboutApp() {
+  const handleResetFileSystem = () => {
+    if (typeof window !== 'undefined') {
+      resetFileSystem()
+      window.location.reload()
+    }
+  }
+
   return (
     <div className="w-full h-full p-4 text-sm bg-[#dcdcdc]">
       <div className="mb-3">
@@ -1066,13 +1087,13 @@ function AboutApp() {
       <Windows95Raised className="p-3 mb-3">
         <div className="font-semibold mb-2">About This Project</div>
         <p className="text-sm leading-relaxed">
-          Hi, my name is Liam. I&apos;m a Computer Science and Business student at Trinity College Dublin. I built this as a fun project to learn more about web development and design, and to showcase the projects I&apos;ve worked on.
+          Hi, my name is Liam. I am a Computer Science and Business student at Trinity College Dublin. I built this as a fun project to learn more about web development and design, and to showcase the projects I have worked on.
 
-          Last updated: 17/08/2025, 21:31:40
+          Last updated: 17/08/2025, 21:46:44
         </p>
       </Windows95Raised>
       
-      <Windows95Raised className="p-3">
+      <Windows95Raised className="p-3 mb-3">
         <div className="font-semibold mb-2">Features</div>
         <ul className="list-disc pl-5 text-sm">
           <li>Drag windows by the title bar</li>
@@ -1082,6 +1103,19 @@ function AboutApp() {
           <li>Drag and drop items to Recycle Bin</li>
           <li>Create and edit text files in Notepad</li>
         </ul>
+      </Windows95Raised>
+
+      <Windows95Raised className="p-3">
+        <div className="font-semibold mb-2">System</div>
+        <button
+          onClick={handleResetFileSystem}
+          className="px-3 py-1 text-xs bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white"
+        >
+          Reset File System (Restore Default Files)
+        </button>
+        <p className="text-xs text-gray-600 mt-2">
+          Click this button to restore the default file system with CV/Resume.pdf in Documents and Image of Liam.jpg in Pictures.
+        </p>
       </Windows95Raised>
     </div>
   )
@@ -1274,7 +1308,7 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT, onOpenApp, refreshT
           onOpenApp?.('image-viewer', { filePath, fileType: 'image', currentFile: name })
         } else if (name.endsWith('.pdf')) {
           // Open PDF files in PDF viewer
-          // Handle nested folder structure for CV/Resume.pdf
+          // Handle CV/Resume.pdf from both Desktop and Documents
           const filePath = name === 'CV/Resume.pdf' ? `/files/Documents/CV.pdf` : `/files/Documents/${name}`
           onOpenApp?.('pdf-viewer', { filePath, fileType: 'pdf', currentFile: name })
         } else {
@@ -1297,20 +1331,16 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT, onOpenApp, refreshT
   }
 
   const handleToggleExpanded = (folderKey: string, isOpen: boolean) => {
-    console.log('🔄 handleToggleExpanded called:', { folderKey, isOpen })
-    
     if (isOpen) {
       // Expanding: remove from collapsed set, add to expanded set
       setManuallyCollapsedFolders(prev => {
         const newSet = new Set(prev)
         newSet.delete(folderKey)
-        console.log('➖ Removed folder from manually collapsed:', folderKey)
         return newSet
       })
       setManuallyExpandedFolders(prev => {
         const newSet = new Set(prev)
         newSet.add(folderKey)
-        console.log('➕ Added folder to manually expanded:', folderKey)
         return newSet
       })
     } else {
@@ -1318,39 +1348,19 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT, onOpenApp, refreshT
       setManuallyExpandedFolders(prev => {
         const newSet = new Set(prev)
         newSet.delete(folderKey)
-        console.log('➖ Removed folder from manually expanded:', folderKey)
         return newSet
       })
       setManuallyCollapsedFolders(prev => {
         const newSet = new Set(prev)
         newSet.add(folderKey)
-        console.log('➕ Added folder to manually collapsed:', folderKey)
         return newSet
       })
     }
   }
 
-  // Debug logging for state changes
-  useEffect(() => {
-    console.log('📊 Current path changed to:', path)
-  }, [path])
-
-  useEffect(() => {
-    console.log('📊 Manually expanded folders changed to:', Array.from(manuallyExpandedFolders))
-  }, [manuallyExpandedFolders])
-
-  useEffect(() => {
-    console.log('📊 Manually collapsed folders changed to:', Array.from(manuallyCollapsedFolders))
-  }, [manuallyCollapsedFolders])
-
   const breadcrumb = useMemo(() => {
     if (path.length === 0) return ['My Computer']
     return ['My Computer', ...path]
-  }, [path])
-
-  // Debug path changes
-  useEffect(() => {
-    console.log('Path changed to:', path)
   }, [path])
 
   // Left tree (simple)
@@ -1391,32 +1401,14 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT, onOpenApp, refreshT
     // Manual expansion takes precedence over auto-collapse
     const isOpen = isManuallyExpanded || (shouldBeOpen && !isManuallyCollapsed)
     
-    // Auto-add to manually expanded set if it's part of the current path and not manually collapsed
-    useEffect(() => {
-      if (shouldBeOpen && !isManuallyExpanded && !isManuallyCollapsed) {
-        console.log('🔄 Auto-adding to manually expanded:', folderKey)
-        onToggleExpanded(folderKey, true)
-      }
-    }, [shouldBeOpen, isManuallyExpanded, isManuallyCollapsed, folderKey, onToggleExpanded])
+    // Auto-expansion is handled by the shouldBeOpen logic above, no need for useEffect
     
     const isActive = fullPath.join('/') === currentPath.join('/')
 
     if (node.type !== 'folder') return null
     const entries = Object.entries(node.children)
 
-    console.log('🌳 TreeFolder render:', {
-      label,
-      folderKey,
-      fullPath,
-      currentPath,
-      shouldBeOpen,
-      isManuallyExpanded,
-      isManuallyCollapsed,
-      isOpen,
-      isActive,
-      manuallyExpandedSetSize: manuallyExpandedSet.size,
-      manuallyCollapsedSetSize: manuallyCollapsedSet.size
-    })
+    // Removed excessive logging to improve performance
 
       return (
     <div className="select-none">
@@ -1984,7 +1976,7 @@ export default function Page() {
   const desktopIcons = useMemo(() => {
     if (!isClient) return []
     
-    const icons: Array<{
+    const baseIcons: Array<{
       key: string
       title: string
       icon?: React.ComponentType<{ className?: string }>
@@ -2035,9 +2027,73 @@ export default function Page() {
         iconKey: 'about'
       }
     ]
-    
-    return icons
-  }, [isClient, openApp]) // Only include necessary dependencies
+
+    // Add files from the Desktop folder
+    const desktopFolder = getNodeByPath(fileSystem, ['C:', 'Desktop'])
+    const desktopFiles: Array<{
+      key: string
+      title: string
+      icon?: React.ComponentType<{ className?: string }>
+      imgSrc?: string
+      onOpen: () => void
+      draggable?: boolean
+      dragItem?: DragItem
+      iconKey?: string
+    }> = []
+
+    if (desktopFolder && desktopFolder.type === 'folder') {
+      Object.entries(desktopFolder.children).forEach(([filename, node]) => {
+        // Skip .lnk files as they're handled by base icons
+        if (filename.endsWith('.lnk')) return
+
+        if (node.type === 'file') {
+          let onOpen: () => void
+          let imgSrc: string
+
+          if (filename.endsWith('.pdf')) {
+            onOpen = () => {
+              const filePath = filename === 'CV/Resume.pdf' ? '/files/Documents/CV.pdf' : `/files/Documents/${filename}`
+              openApp('pdf-viewer', { filePath, fileType: 'pdf', currentFile: filename })
+            }
+            imgSrc = '/icons/pdf_file.webp'
+          } else if (filename.endsWith('.txt')) {
+            onOpen = () => {
+              const fileContent = node.content || ''
+              openApp('notepad', { text: fileContent, currentFile: filename })
+            }
+            imgSrc = '/icons/txt_file.webp'
+          } else if (filename.endsWith('.jpg') || filename.endsWith('.jpeg') || filename.endsWith('.png')) {
+            onOpen = () => {
+              const filePath = `/files/Pictures/${filename}`
+              openApp('image-viewer', { filePath, fileType: 'image', currentFile: filename })
+            }
+            imgSrc = '/icons/image_file.webp'
+          } else {
+            onOpen = () => alert(`Opening file: ${filename}`)
+            imgSrc = '/icons/txt_file.webp'
+          }
+
+          desktopFiles.push({
+            key: `desktop-${filename}`,
+            title: filename,
+            imgSrc,
+            onOpen,
+            draggable: true,
+            dragItem: {
+              type: 'desktop-icon',
+              name: filename,
+              path: ['C:', 'Desktop'],
+              isFolder: false,
+              originalLocation: ['C:', 'Desktop']
+            },
+            iconKey: `desktop-${filename}`
+          })
+        }
+      })
+    }
+
+    return [...baseIcons, ...desktopFiles]
+  }, [isClient, openApp, fileSystem]) // Include fileSystem in dependencies
 
   return (
     <main
