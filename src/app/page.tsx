@@ -2011,6 +2011,14 @@ export default function Page() {
         iconKey: 'notepad'
       },
       {
+        key: 'typing-test',
+        title: 'Typing Test',
+        imgSrc: '/icons/type.webp',
+        onOpen: () => window.location.href = '/type',
+        draggable: false,
+        iconKey: 'typing-test'
+      },
+      {
         key: 'recycle-bin',
         title: 'Recycle Bin',
         imgSrc: '/icons/dustbin.webp',
