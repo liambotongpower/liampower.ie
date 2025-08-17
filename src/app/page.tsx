@@ -65,6 +65,10 @@ const FS_ROOT: FSFolder = {
     'C:': {
       type: 'folder',
       children: {
+        Desktop: {
+          type: 'folder',
+          children: {},
+        },
         Documents: {
           type: 'folder',
           children: {
@@ -96,6 +100,49 @@ function getNodeByPath(root: FSFolder, path: string[]): FSNode | null {
     cur = nextNode
   }
   return cur
+}
+
+// File system management functions
+function createFile(root: FSFolder, path: string[], filename: string, content: string): boolean {
+  const folder = getNodeByPath(root, path)
+  if (!folder || folder.type !== 'folder') return false
+  
+  const newFile: FSFile = {
+    type: 'file',
+    ext: 'txt',
+    size: content.length
+  }
+  
+  folder.children[filename] = newFile
+  return true
+}
+
+function updateFile(root: FSFolder, path: string[], filename: string, content: string): boolean {
+  const folder = getNodeByPath(root, path)
+  if (!folder || folder.type !== 'folder') return false
+  
+  const file = folder.children[filename]
+  if (!file || file.type !== 'file') return false
+  
+  file.size = content.length
+  return true
+}
+
+function generateUniqueFilename(baseName: string, existingFiles: string[]): string {
+  if (!existingFiles.includes(baseName)) {
+    return baseName
+  }
+  
+  const nameWithoutExt = baseName.replace(/\.txt$/, '')
+  let counter = 1
+  let newName = `${nameWithoutExt} (${counter}).txt`
+  
+  while (existingFiles.includes(newName)) {
+    counter++
+    newName = `${nameWithoutExt} (${counter}).txt`
+  }
+  
+  return newName
 }
 
 function Windows95Raised({ className, children }: { className?: string; children?: React.ReactNode }) {
@@ -267,7 +314,7 @@ function DesktopIcon({
     <button
       onClick={handleClick}
       className={cn(
-        'flex flex-col items-center justify-start gap-1 p-2 rounded outline-none focus:ring-2 focus:ring-emerald-400 w-28 h-32',
+        'flex flex-col items-center justify-start gap-1 p-1.5 rounded outline-none focus:ring-2 focus:ring-emerald-400 w-22 h-26',
         { 'bg-black/20': selected },
         className
       )}
@@ -280,13 +327,13 @@ function DesktopIcon({
           alt={imgAlt || title}
           width={64}
           height={64}
-          className="w-16 h-16 object-contain"
+          className="w-13 h-13 object-contain"
           draggable={false}
         />
       ) : (
-        <Icon className="w-16 h-16 text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]" />
+        <Icon className="w-13 h-13 text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]" />
       )}
-      <span className="text-base text-white text-center leading-tight drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]">
+      <span className="text-sm text-white text-center leading-tight drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]">
         {title}
       </span>
     </button>
@@ -558,13 +605,106 @@ function StartMenuItem({
   )
 }
 
-function NotepadApp({ text = 'Welcome to Windows 95 Notepad (demo).' }: { text?: string }) {
+function NotepadApp({ 
+  text = 'Welcome to Windows 95 Notepad (demo).',
+  onDesktopUpdate
+}: { 
+  text?: string
+  onDesktopUpdate?: () => void
+}) {
+  const [content, setContent] = useState(text)
+  const [currentFile, setCurrentFile] = useState<string | null>(null)
+  const [isModified, setIsModified] = useState(false)
+
+  const handleNew = () => {
+    if (isModified && currentFile) {
+      const shouldSave = confirm('Do you want to save changes to the current file?')
+      if (shouldSave) {
+        handleSaveAs()
+      }
+    }
+    setContent('')
+    setCurrentFile(null)
+    setIsModified(false)
+  }
+
+  const handleSaveAs = () => {
+    // Prompt user for filename
+    const filename = prompt('Enter filename (without .txt extension):', currentFile ? currentFile.replace('.txt', '') : 'Untitled')
+    
+    if (filename === null) {
+      // User cancelled
+      return
+    }
+    
+    if (filename.trim() === '') {
+      alert('Please enter a valid filename')
+      return
+    }
+    
+    // Ensure .txt extension
+    const fullFilename = filename.trim().endsWith('.txt') ? filename.trim() : `${filename.trim()}.txt`
+    
+    const desktopFolder = getNodeByPath(FS_ROOT, ['C:', 'Desktop'])
+    if (desktopFolder && desktopFolder.type === 'folder') {
+      const existingFiles = Object.keys(desktopFolder.children)
+      
+      // Check if file already exists (unless it's the current file)
+      if (existingFiles.includes(fullFilename) && fullFilename !== currentFile) {
+        const overwrite = confirm(`File "${fullFilename}" already exists. Do you want to overwrite it?`)
+        if (!overwrite) {
+          return
+        }
+      }
+      
+      if (createFile(FS_ROOT, ['C:', 'Desktop'], fullFilename, content)) {
+        setCurrentFile(fullFilename)
+        setIsModified(false)
+        alert(`File saved as "${fullFilename}" on Desktop`)
+        // Trigger desktop update to show new icon
+        onDesktopUpdate?.()
+      } else {
+        alert('Error saving file')
+      }
+    } else {
+      alert('Error: Desktop folder not found')
+    }
+  }
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value)
+    setIsModified(true)
+  }
+
   return (
     <div className="w-full h-full flex flex-col">
       <Windows95Raised className="px-2 py-1 mb-1">
-        <div className="text-xs">File Edit View Help</div>
+        <div className="flex items-center justify-between">
+          <div className="text-xs">File Edit View Help</div>
+          <div className="flex gap-1">
+            <button
+              onClick={handleNew}
+              className="px-2 py-0.5 text-xs bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white"
+            >
+              New
+            </button>
+            <button
+              onClick={handleSaveAs}
+              className="px-2 py-0.5 text-xs bg-[#c0c0c0] border border-t-white border-l-white border-r-[#404040] border-b-[#404040] active:border-t-[#404040] active:border-l-[#404040] active:border-r-white active:border-b-white"
+            >
+              Save As
+            </button>
+          </div>
+        </div>
       </Windows95Raised>
-      <div className="flex-1 bg-white p-2 font-mono text-sm overflow-auto">{text}</div>
+      <div className="flex-1 bg-white p-2 font-mono text-sm overflow-auto">
+        <textarea
+          value={content}
+          onChange={handleContentChange}
+          className="w-full h-full bg-white border-none outline-none resize-none font-mono text-sm"
+          placeholder="Type your text here..."
+        />
+      </div>
     </div>
   )
 }
@@ -604,8 +744,20 @@ type ExplorerProps = {
 
 function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
   // path: [] => "My Computer" (virtual root)
-  const [path, setPath] = useState<string[]>(initialPath)
-  const currentNode = useMemo(() => (path.length === 0 ? root : getNodeByPath(root, path)), [path, root])
+  const [path, setPath] = useState<string[]>([])
+  const [forceUpdate, setForceUpdate] = useState(0)
+  
+  // Only set initial path once on mount
+  useEffect(() => {
+    if (initialPath.length > 0) {
+      setPath(initialPath)
+    }
+  }, []) // Empty dependency array - only run once
+  const currentNode = useMemo(() => {
+    const node = path.length === 0 ? root : getNodeByPath(root, path)
+    console.log('Current node calculated:', { path, nodeType: node?.type, hasChildren: node?.type === 'folder' ? Object.keys(node.children).length : 0 })
+    return node
+  }, [path, root])
 
   const canGoUp = path.length > 0
   const goUp = () => setPath((p) => p.slice(0, -1))
@@ -616,19 +768,33 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
   }
 
   const openItem = (name: string) => {
+    console.log('Opening item:', name, 'Current path:', path)
+    
     if (path.length === 0) {
       // At "My Computer" viewing drives: open drive
+      console.log('Opening drive:', name)
       setPath([name])
       return
     }
+    
     const node = getNodeByPath(root, path)
-    if (!node || node.type !== 'folder') return
+    if (!node || node.type !== 'folder') {
+      console.log('Invalid node or not a folder')
+      return
+    }
+    
     const target = node.children[name]
-    if (!target) return
+    if (!target) {
+      console.log('Target not found:', name)
+      return
+    }
+    
     if (target.type === 'folder') {
+      console.log('Opening folder:', name)
       setPath((p) => [...p, name])
     } else {
-      // File: For demo, do nothing or alert
+      // File: For demo, just show the filename
+      console.log('Opening file:', name)
       alert(`Opening file: ${name}`)
     }
   }
@@ -636,6 +802,11 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
   const breadcrumb = useMemo(() => {
     if (path.length === 0) return ['My Computer']
     return ['My Computer', ...path]
+  }, [path])
+
+  // Debug path changes
+  useEffect(() => {
+    console.log('Path changed to:', path)
   }, [path])
 
   // Left tree (simple)
@@ -648,25 +819,66 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
     node: FSNode
     fullPath: string[]
   }) {
-    const [open, setOpen] = useState(fullPath.length <= 1) // expand root levels by default
-    const isActive =
-      breadcrumb.length > 1 &&
-      fullPath.join('/') === path.join('/')
+    // Auto-expand if this folder is in the current path or is a parent of the current path
+    const shouldBeOpen = fullPath.length <= 1 || path.some((_, index) => 
+      path.slice(0, index + 1).join('/') === fullPath.join('/')
+    )
+    const [open, setOpen] = useState(shouldBeOpen)
+    
+    // Update open state when path changes
+    useEffect(() => {
+      if (shouldBeOpen && !open) {
+        setOpen(true)
+      }
+    }, [path, shouldBeOpen, open])
+    
+    const isActive = fullPath.join('/') === path.join('/')
 
     if (node.type !== 'folder') return null
     const entries = Object.entries(node.children)
 
+    console.log('Rendering TreeFolder:', label, 'fullPath:', fullPath, 'isActive:', isActive)
+
     return (
       <div className="select-none">
-        <button
+        <div
           className={cn(
-            'w-full text-left px-1 py-0.5 text-xs rounded hover:bg-[#bdbdbd] flex items-center gap-1',
+            'w-full text-left px-1 py-0.5 text-xs rounded hover:bg-[#bdbdbd] flex items-center gap-1 cursor-pointer select-none',
             isActive && 'bg-[#9c9c9c]'
           )}
-          onClick={() => {
-            setPath(fullPath)
+          onMouseDown={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            console.log('Tree item mouse down:', label, 'Path:', fullPath)
           }}
-          onDoubleClick={() => setOpen((o) => !o)}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            console.log('Tree item clicked:', label, 'Path:', fullPath, 'Current path before:', path)
+            setPath(() => {
+              console.log('Setting path to:', fullPath)
+              return fullPath
+            })
+            setForceUpdate(prev => prev + 1)
+            console.log('setPath called with:', fullPath)
+          }}
+          onDoubleClick={() => {
+            console.log('Tree item double-clicked:', label)
+            setOpen((o) => !o)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              console.log('Tree item keyboard activated:', label, 'Path:', fullPath)
+              setPath(() => {
+                console.log('Setting path to:', fullPath)
+                return fullPath
+              })
+              setForceUpdate(prev => prev + 1)
+            }
+          }}
+          role="button"
+          tabIndex={0}
           aria-label={`Folder ${label}`}
         >
           <ChevronRight
@@ -681,7 +893,7 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
             draggable={false}
           />
           <span className="truncate">{label}</span>
-        </button>
+        </div>
         {open && (
           <div className="pl-4">
             {entries.map(([name, child]) =>
@@ -696,20 +908,28 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
   }
 
   const rightPaneItems = useMemo(() => {
+    console.log('Calculating rightPaneItems for path:', path)
     if (path.length === 0) {
       // Drives
-      return Object.keys(root.children).map((drive) => ({
+      const drives = Object.keys(root.children).map((drive) => ({
         name: drive,
         type: 'drive' as const,
       }))
+      console.log('Showing drives:', drives)
+      return drives
     }
-    if (!currentNode || currentNode.type !== 'folder') return []
-    return Object.entries(currentNode.children).map(([name, node]) => ({
+    if (!currentNode || currentNode.type !== 'folder') {
+      console.log('No current node or not a folder')
+      return []
+    }
+    const items = Object.entries(currentNode.children).map(([name, node]) => ({
       name,
       type: node.type === 'folder' ? 'folder' : 'file',
       node,
     }))
-  }, [currentNode, path, root])
+    console.log('Showing items:', items)
+    return items
+  }, [currentNode, path, root, forceUpdate])
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -745,7 +965,31 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
             <RefreshCcw className="w-4 h-4 inline-block" />
           </button>
           <Windows95Inset className="ml-2 px-2 py-0.5 text-xs flex-1 overflow-hidden">
-            <div className="truncate">{breadcrumb.join(' \\ ')}</div>
+            <div className="truncate flex items-center gap-1">
+              {breadcrumb.map((item, index) => {
+                const itemPath = index === 0 ? [] : breadcrumb.slice(1, index + 1)
+                return (
+                  <span key={index}>
+                    {index > 0 && <span className="mx-1">\</span>}
+                    <button
+                      className={cn(
+                        'hover:underline',
+                        index === breadcrumb.length - 1 && 'font-semibold'
+                      )}
+                      onClick={() => {
+                        if (index === 0) {
+                          setPath([]) // My Computer
+                        } else {
+                          setPath(itemPath)
+                        }
+                      }}
+                    >
+                      {item}
+                    </button>
+                  </span>
+                )
+              })}
+            </div>
           </Windows95Inset>
         </div>
       </Windows95Raised>
@@ -760,7 +1004,10 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
                 'w-full text-left px-1 py-0.5 text-xs rounded hover:bg-[#bdbdbd] flex items-center gap-1',
                 path.length === 0 && 'bg-[#9c9c9c]'
               )}
-              onClick={() => setPath([])}
+              onClick={() => {
+                console.log('My Computer clicked')
+                setPath([])
+              }}
               aria-label="My Computer"
             >
               <Image
@@ -791,7 +1038,14 @@ function FileExplorerApp({ initialPath = [], root = FS_ROOT }: ExplorerProps) {
                   <button
                     key={item.name}
                     className="w-28 h-20 flex flex-col items-center justify-center gap-1 rounded hover:bg-[#bdbdbd] focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                    onDoubleClick={() => openItem(item.name)}
+                    onDoubleClick={() => {
+                      console.log('Double-clicked:', item.name)
+                      openItem(item.name)
+                    }}
+                    onClick={() => {
+                      console.log('Single-clicked:', item.name)
+                      // For single click, we could add selection highlighting
+                    }}
                     aria-label={`Open ${item.name}`}
                     title={item.name}
                   >
@@ -822,6 +1076,7 @@ export default function Page() {
   const [windows, setWindows] = useState<WinInstance[]>([])
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null)
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false)
+  const [desktopUpdateTrigger, setDesktopUpdateTrigger] = useState(0)
   const viewport = useViewportSize()
 
   const bringToFront = (id: string) => {
@@ -859,6 +1114,10 @@ export default function Page() {
     )
   }
 
+  const triggerDesktopUpdate = () => {
+    setDesktopUpdateTrigger(prev => prev + 1)
+  }
+
   const openApp = (type: WindowType, payload?: WindowPayload) => {
     const id = `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     const base: WinInstance = {
@@ -894,7 +1153,10 @@ export default function Page() {
       case 'file-explorer':
         return <FileExplorerApp initialPath={(w.payload?.initialPath as string[]) || []} />
       case 'notepad':
-        return <NotepadApp text={w.payload?.text || 'Hello from Notepad.\n\nThis is a demo.'} />
+        return <NotepadApp 
+          text={w.payload?.text || 'Hello from Notepad.\n\nThis is a demo.'} 
+          onDesktopUpdate={triggerDesktopUpdate}
+        />
       case 'recycle-bin':
         return <RecycleBinApp />
       case 'about':
@@ -904,7 +1166,24 @@ export default function Page() {
     }
   }
 
-  const desktopIcons = [
+  // Get desktop files for dynamic icons
+  const desktopFiles = useMemo(() => {
+    const desktopFolder = getNodeByPath(FS_ROOT, ['C:', 'Desktop'])
+    if (!desktopFolder || desktopFolder.type !== 'folder') return []
+    
+    return Object.entries(desktopFolder.children).map(([filename, node]) => ({
+      key: `desktop-file-${filename}`,
+      title: filename,
+      icon: FileText,
+      imgSrc: '/icons/text_file.webp',
+      onOpen: () => {
+        // For demo, just show the filename
+        alert(`Opening file: ${filename}`)
+      },
+    }))
+  }, [desktopUpdateTrigger]) // Update when trigger changes
+
+  const staticDesktopIcons = [
     {
       key: 'my-computer',
       title: 'My Computer',
@@ -941,6 +1220,8 @@ export default function Page() {
       onOpen: () => openApp('about'),
     },
   ]
+
+  const desktopIcons = [...staticDesktopIcons, ...desktopFiles]
 
   return (
     <main
