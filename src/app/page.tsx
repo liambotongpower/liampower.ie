@@ -1074,7 +1074,7 @@ function AboutApp() {
       resetFileSystem()
       window.location.reload()
     }
-  }
+  } 
 
   return (
     <div className="w-full h-full p-4 text-sm bg-[#dcdcdc]">

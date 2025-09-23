@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { FaCog } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
 
 function getRandomInt(max: number) {
   return Math.floor(Math.random() * max);
@@ -96,6 +97,7 @@ function splitWordsToLineStringsWithSpaces(words: string[], maxLineLen: number):
 }
 
 export default function Home() {
+  const router = useRouter();
   const [input, setInput] = useState("");
   const [lines, setLines] = useState<string[]>([]); // Each line is a string
   const [promptString, setPromptString] = useState("");
@@ -430,6 +432,27 @@ export default function Home() {
       onKeyDown={handleKeyDown}
       style={{ outline: "none", position: 'relative' }}
     >
+      {/* Back button in top left */}
+      <button
+        onClick={() => router.push('/')}
+        style={{
+          position: 'absolute',
+          top: '1.5rem',
+          left: '2rem',
+          background: 'none',
+          border: 'none',
+          color: '#fff',
+          fontSize: '1.5rem',
+          cursor: 'pointer',
+          zIndex: 2000,
+          fontFamily: 'monospace',
+          fontWeight: 'bold',
+        }}
+        aria-label="Back to home"
+        title="Back to home"
+      >
+        ← Back
+      </button>
       {/* Settings button in top right */}
       <button
         onClick={() => setShowSettings(true)}
