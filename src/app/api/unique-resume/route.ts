@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       : isTex
       ? 'application/x-tex'
       : 'application/octet-stream'
-    return new Response(data, {
+    return new Response(new Uint8Array(data), {
       status: 200,
       headers: {
         'Content-Type': contentType,
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
         'Cache-Control': 'no-store',
       },
     })
-  } catch (e) {
+  } catch {
     return new Response('File not found', { status: 404 })
   }
 }

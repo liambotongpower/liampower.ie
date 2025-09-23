@@ -20,6 +20,7 @@ export type RunResult = {
 }
 
 export async function processJobPostingAction(formData: FormData): Promise<RunResult> {
+  type ExecFileErrorLike = Error & { stdout?: string; stderr?: string }
   try {
     const text = String(formData.get('jobText') || '')
     const embellishmentRaw = String(formData.get('embellishment') || '5')
@@ -38,18 +39,20 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
     try {
       const { stdout: pythonVersion } = await execFileAsync('python3', ['--version'], { cwd: UNIQUE_RESUME_DIR })
       console.log('🐍 DEBUG: Python version:', pythonVersion.trim())
-    } catch (err: any) {
-      console.log('❌ DEBUG: Python check failed:', err.message)
-      return { ok: false, message: 'Python3 not found. Please install Python 3.', stderr: err.message }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.log('❌ DEBUG: Python check failed:', message)
+      return { ok: false, message: 'Python3 not found. Please install Python 3.', stderr: message }
     }
 
     // Check if pip is available
     try {
       const { stdout: pipVersion } = await execFileAsync('python3', ['-m', 'pip', '--version'], { cwd: UNIQUE_RESUME_DIR })
       console.log('📦 DEBUG: Pip version:', pipVersion.trim())
-    } catch (err: any) {
-      console.log('❌ DEBUG: Pip check failed:', err.message)
-      return { ok: false, message: 'Pip not found. Please install pip.', stderr: err.message }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.log('❌ DEBUG: Pip check failed:', message)
+      return { ok: false, message: 'Pip not found. Please install pip.', stderr: message }
     }
 
     // Check if virtual environment exists, create if not
@@ -65,9 +68,10 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
       try {
         await execFileAsync('python3', ['-m', 'venv', 'venv'], { cwd: UNIQUE_RESUME_DIR })
         console.log('✅ DEBUG: Virtual environment created')
-      } catch (err: any) {
-        console.log('❌ DEBUG: Failed to create virtual environment:', err.message)
-        return { ok: false, message: 'Failed to create virtual environment', stderr: err.message }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err)
+        console.log('❌ DEBUG: Failed to create virtual environment:', message)
+        return { ok: false, message: 'Failed to create virtual environment', stderr: message }
       }
     }
 
@@ -82,10 +86,14 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
       console.log('📦 DEBUG: Install stdout:', installStdout)
       if (installStderr) console.log('📦 DEBUG: Install stderr:', installStderr)
       console.log('✅ DEBUG: Dependencies installed successfully')
-    } catch (err: any) {
-      console.log('⚠️ DEBUG: Dependency installation failed:', err.message)
-      console.log('📦 DEBUG: Install stdout:', err.stdout)
-      console.log('📦 DEBUG: Install stderr:', err.stderr)
+    } catch (err: unknown) {
+      const e = (err ?? {}) as Partial<ExecFileErrorLike>
+      const message = e.message ?? String(err)
+      const stdout = e.stdout
+      const stderr = e.stderr
+      console.log('⚠️ DEBUG: Dependency installation failed:', message)
+      if (stdout) console.log('📦 DEBUG: Install stdout:', stdout)
+      if (stderr) console.log('📦 DEBUG: Install stderr:', stderr)
       // Continue anyway - the script might still work
     }
 
@@ -105,20 +113,23 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
     // Test Python import before running main script
     console.log('🔍 DEBUG: Testing Python imports...')
     try {
-      const { stdout: importTest, stderr: importError } = await execFileAsync(
+      const { stdout: importTest } = await execFileAsync(
         venvPython,
         ['-c', 'import google.generativeai as genai; import dotenv; print("Imports successful")'],
         { cwd: UNIQUE_RESUME_DIR, env: process.env }
       )
       console.log('✅ DEBUG: Import test successful:', importTest.trim())
-    } catch (err: any) {
-      console.log('❌ DEBUG: Import test failed:', err.message)
-      console.log('📦 DEBUG: Import stderr:', err.stderr)
+    } catch (err: unknown) {
+      const e = (err ?? {}) as Partial<ExecFileErrorLike>
+      const message = e.message ?? String(err)
+      const stderr = e.stderr
+      console.log('❌ DEBUG: Import test failed:', message)
+      if (stderr) console.log('📦 DEBUG: Import stderr:', stderr)
       return { 
         ok: false, 
         message: 'Python imports failed. Check dependencies installation.',
-        stdout: err.stdout,
-        stderr: err.stderr || err.message
+        stdout: e.stdout,
+        stderr: stderr || message
       }
     }
 
@@ -135,11 +146,9 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
       if (stderr) console.log('⚠️ DEBUG: Script stderr:', stderr)
       // Attempt to compile PDF from Output_CV.tex
       let pdfAvailable = false
-      let compileTried = false
       const compileCandidates = ['pdflatex', 'xelatex', 'lualatex']
       for (const bin of compileCandidates) {
         try {
-          compileTried = true
           console.log('🔧 DEBUG: Trying LaTeX compiler:', bin)
           const { stdout: cOut, stderr: cErr } = await execFileAsync(
             bin,
@@ -150,8 +159,9 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
           if (cErr) console.log('🖨️ DEBUG: LaTeX compile stderr:', cErr)
           pdfAvailable = true
           break
-        } catch (e: any) {
-          console.log('⚠️ DEBUG: LaTeX compile failed with', bin, e?.message)
+        } catch (e: unknown) {
+          const message = e instanceof Error ? e.message : String(e)
+          console.log('⚠️ DEBUG: LaTeX compile failed with', bin, message)
           continue
         }
       }
@@ -164,20 +174,25 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
         pdfAvailable,
         texAvailable: true
       }
-    } catch (err: any) {
-      console.log('❌ DEBUG: Script execution failed:', err.message)
-      console.log('📄 DEBUG: Script stdout:', err.stdout)
-      console.log('⚠️ DEBUG: Script stderr:', err.stderr)
+    } catch (err: unknown) {
+      const e = (err ?? {}) as Partial<ExecFileErrorLike>
+      const message = e.message ?? String(err)
+      const stdout = e.stdout
+      const stderr = e.stderr
+      console.log('❌ DEBUG: Script execution failed:', message)
+      if (stdout) console.log('📄 DEBUG: Script stdout:', stdout)
+      if (stderr) console.log('⚠️ DEBUG: Script stderr:', stderr)
       return {
         ok: false,
         message: 'Failed to run main.py. Check the error details below.',
-        stdout: err.stdout,
-        stderr: err.stderr || String(err)
+        stdout,
+        stderr: stderr || message
       }
     }
-  } catch (e: any) {
-    console.log('💥 DEBUG: Unexpected error:', e.message)
-    return { ok: false, message: e?.message || 'Unknown error' }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e)
+    console.log('💥 DEBUG: Unexpected error:', message)
+    return { ok: false, message: message || 'Unknown error' }
   }
 }
 
