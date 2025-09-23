@@ -1,0 +1,136 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.2in,top=0.2in,bottom=0.2in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{lipsum}
+
+% Remove page numbers
+\pagestyle{empty}
+
+% Custom section formatting
+\titleformat{\section}
+  {\large\bfseries}
+  {}
+  {0em}
+  {}
+  [\titlerule]
+
+\titleformat{\subsection}
+  {\normalsize\bfseries}
+  {}
+  {0em}
+  {}
+
+% Reduce spacing between sections and subsections by 50%
+\titlespacing*{\section}{0pt}{0.5\baselineskip}{0.25\baselineskip}
+\titlespacing*{\subsection}{0pt}{0.25\baselineskip}{0.125\baselineskip}
+
+% Custom list formatting with reduced spacing
+\setlist[itemize]{leftmargin=*,noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
+\setlist[enumerate]{leftmargin=*,noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
+
+% Custom spacing for entries
+% Reduce paragraph spacing
+\setlength{\parskip}{0.15\baselineskip}
+\setlength{\parindent}{0pt}
+
+% Reduce spacing around minipage environments
+\setlength{\abovedisplayskip}{0.25\baselineskip}
+\setlength{\belowdisplayskip}{0.25\baselineskip}
+
+% Header formatting
+\newcommand{\cvheader}[4]{
+  \begin{center}
+    {\Large\bfseries #1}\\[0.25em]
+    {\normalsize #2}\\[0.15em]
+    {\small #3}\\[0.15em]
+    {\small #4}
+  \end{center}
+  \vspace{0.25em}
+}
+
+% Custom itemize for achievements
+\newenvironment{achievements}
+  {\begin{itemize}[leftmargin=*]}
+  {\end{itemize}}
+
+\begin{document}
+
+% HEADER SECTION
+\begin{center}
+{\large\bfseries Liam Power} \hfill {\large liambotongpower@gmail.com} \hfill {\large liampower.ie}
+\end{center}
+
+\section{PROFESSIONAL SUMMARY} 
+
+
+Highly motivated and results-oriented Software Engineer with proven success delivering impactful AI-powered solutions and facilitating STEM education. Proficient in React, Flask, AWS, and Agile methodologies, I deliver engaging training and support system rollouts, evidenced by a 45\% output quality increase and 84\% user retention rate in a previous role. Successfully collaborated on projects utilizing JWT authentication and CI/CD pipelines, showcasing strong organizational and communication skills. Ready to leverage expertise in digital transformation and change management to support your team.
+
+
+\section{EXPERIENCE}
+
+\subsection{Software Engineer, IBM \hfill January 2025 - May 2025}
+\begin{itemize}
+\item Architected AI-powered content generation pipeline with RAG, web search integration, and multi-LLM support via LiteLLM, increasing output quality by 45\% while reducing costs by 40\% through intelligent fallback systems.
+\item Developed authentication and user history system with Firebase integration and secure API routes, enabling session recall and content re-customization capabilities, resulting in 84\% user retention rate.
+\item Built full-stack React/Flask application with login/signup, article preview, podcast player, and dark/light mode, implementing comprehensive test coverage that reduced production bugs by 60\%.
+\item Established CI/CD pipeline with test-gated merges and AWS deployment, executed 4 Agile sprints using Kanban methodology, adapting deliverables based on IBM stakeholder feedback.
+\end{itemize}
+
+\subsection{STEM Educator, Trinity Walton Club \hfill June 2024 - Present}
+\begin{itemize}
+\item Facilitate hands-on STEM learning for post-primary students at TCD collaborating with postgraduate  team to deliver interactive sessions, teaching 200+ students annually with 4.8/5 average satisfaction rating (based on classroom surveys).
+\item Design and deliver interactive investigations and team challenges that cultivate critical thinking and higher-order reasoning in dynamic, non-formal learning environments, with 92\% of students reporting increased interest in STEM subjects. 
+\item Contribute to club's impact of delivering more than 7,000 STEM engagements in its first decade, with approximately 145 of my 170 students (85\%) progressing to STEM degrees.
+\end{itemize}
+
+\section{PROJECTS}
+
+\subsection{SpotPlots (TypeScript, Python)\hfill February 2025 - Present}
+\begin{itemize}
+\item Co-founded and developed property analysis startup through Trinity's LaunchBox incubator program, finishing in the top 5 of 2025 cohort and securing a summer residency.
+\item Developed location intelligence platform with real-time transit data and property metrics filtering, helping users identify optimal locations; achieved 92\% satisfaction rate from initial user interviews.
+\item Built responsive Next.js web application with MongoDB backend featuring interactive maps, personalized recommendations, and detailed scoring systems with JWT authentication.
+\end{itemize}
+
+\subsection{Sentiment-Driven Predictive Market Algorithm (JavaScript, C++) \hfill August 2025 - Present}
+\begin{itemize}
+\item Developed algorithmic trading system for cryptocurrency markets, achieving 18\% higher ROI than baseline strategies while implementing fractional Kelly criterion risk management that reduced maximum drawdown by 35\%.
+\item Implemented quantitative framework combining market probability assessment with sentiment analysis to create adjusted probability models, improving prediction accuracy by 12\% over market consensus and improving sentiment classification to 86\%.
+\item Built scalable data pipeline with Redis caching, integrating Polymarket for real-time price feeds and Reddit for sentiment extraction, processing 50,000+ social media posts daily with 99.7\% uptime and sub-100ms response times.
+\end{itemize}
+
+\subsection{Investigating Barriers to AI Adoption in Irish SMEs, Laidlaw Foundation \hfill May 2025 - September 2025}
+\begin{itemize}
+\item Conducted comprehensive mixed-methods research investigating why Irish small and medium enterprises lag behind larger counterparts in AI adoption, with only 25\% adoption rate compared to 40\% in large enterprises.
+\item Executed semi-structured interviews with 13 Irish SME decision-makers across diverse sectors to examine real-world implementation challenges
+\item Selected to present research findings at the Laidlaw Foundation Conference in October to an audience of 300 participants.
+\end{itemize}
+
+\section{ACHIEVEMENTS \& SKILLS}
+
+\begin{minipage}[t]{0.60\textwidth}
+\begin{itemize}
+\item Top 3 Finish in Microsoft Security Hackathon 2025
+\item Awarded the Laidlaw Leadership \& Research Scholarship (€10,000)
+\item Co-founded TCD Think Tank, Ireland's first student-led think tank
+\item Awarded the Sandford Park Academic Scholarship (€25,000)
+\item TCD Teaching Assistant for CSU11011
+\item TCD Research Assistant for Dr. James Ng
+\item Computer Science and Business Student Union Representative
+\item S2S Student Mentor
+\end{itemize}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.40\textwidth}
+\begin{itemize}
+\item \textbf{Languages:} Python, JavaScript, Java, C++, SQL, R, HTML/CSS
+\item \textbf{Frameworks:} React, Node.js, Django, Flask, Spring Boot
+\item \textbf{Tools:} Git, Docker, AWS, MongoDB, PostgreSQL, Kubernetes, Jupyter
+\item \textbf{Testing/Quality:} Jest, Pytest, Selenium, CI/CD, Firebase, JWT
+\end{itemize}
+\end{minipage}
+
+\end{document}
