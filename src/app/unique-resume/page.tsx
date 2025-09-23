@@ -84,14 +84,37 @@ export default function UniqueResumePage() {
           <div style={{ fontWeight: 700, color: result.ok ? 'green' : 'crimson' }}>{result.message}</div>
           {result.stdout && (
             <details open>
-              <summary style={{ cursor: 'pointer', marginTop: 8 }}>stdout</summary>
-              <pre style={{ whiteSpace: 'pre-wrap' }}>{result.stdout}</pre>
+              <summary style={{ cursor: 'pointer', marginTop: 8, fontWeight: 600 }}>📄 stdout</summary>
+              <pre style={{ 
+                whiteSpace: 'pre-wrap', 
+                backgroundColor: '#f5f5f5', 
+                padding: '12px', 
+                borderRadius: '6px', 
+                border: '1px solid #ddd',
+                maxHeight: '400px',
+                overflowY: 'auto',
+                fontSize: '13px',
+                lineHeight: '1.4',
+                fontFamily: 'monospace'
+              }}>{result.stdout}</pre>
             </details>
           )}
           {result.stderr && (
             <details>
-              <summary style={{ cursor: 'pointer', marginTop: 8 }}>stderr</summary>
-              <pre style={{ whiteSpace: 'pre-wrap', color: 'crimson' }}>{result.stderr}</pre>
+              <summary style={{ cursor: 'pointer', marginTop: 8, fontWeight: 600 }}>⚠️ stderr</summary>
+              <pre style={{ 
+                whiteSpace: 'pre-wrap', 
+                color: 'crimson',
+                backgroundColor: '#ffeaea', 
+                padding: '12px', 
+                borderRadius: '6px', 
+                border: '1px solid #ffcccc',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                fontSize: '13px',
+                lineHeight: '1.4',
+                fontFamily: 'monospace'
+              }}>{result.stderr}</pre>
             </details>
           )}
         </div>
