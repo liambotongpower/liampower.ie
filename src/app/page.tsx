@@ -588,6 +588,11 @@ function StartMenu({
       action: () => onOpenApp('file-explorer', { initialPath: ['C:', 'Documents'] })
     },
     {
+      label: 'Unique Resume',
+      icon: FileText,
+      action: () => window.open('/unique-resume', '_blank')
+    },
+    {
       label: 'Settings',
       icon: Settings,
       hasSubmenu: true,
@@ -2017,6 +2022,14 @@ export default function Page() {
         onOpen: () => window.location.href = '/type',
         draggable: false,
         iconKey: 'typing-test'
+      },
+      {
+        key: 'unique-resume',
+        title: 'Unique Resume',
+        imgSrc: '/icons/type.webp',
+        onOpen: () => window.open('/unique-resume', '_blank'),
+        draggable: false,
+        iconKey: 'unique-resume'
       },
       {
         key: 'recycle-bin',

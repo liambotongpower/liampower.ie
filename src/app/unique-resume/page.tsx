@@ -7,7 +7,9 @@ export default function UniqueResumePage() {
   const [jobText, setJobText] = useState('')
   const [embellishment, setEmbellishment] = useState(5)
   const [submitting, setSubmitting] = useState(false)
-  const [result, setResult] = useState<null | { ok: boolean; message: string; stdout?: string; stderr?: string }>(null)
+  const [result, setResult] = useState<
+    null | { ok: boolean; message: string; pdfAvailable?: boolean; texAvailable?: boolean; stdout?: string; stderr?: string }
+  >(null)
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -19,6 +21,8 @@ export default function UniqueResumePage() {
       fd.set('embellishment', String(embellishment))
       const res = await processJobPostingAction(fd)
       setResult(res)
+      if (res.stdout) console.log('stdout:', res.stdout)
+      if (res.stderr) console.warn('stderr:', res.stderr)
     } finally {
       setSubmitting(false)
     }
@@ -82,40 +86,41 @@ export default function UniqueResumePage() {
       {result && (
         <div style={{ marginTop: 20 }}>
           <div style={{ fontWeight: 700, color: result.ok ? 'green' : 'crimson' }}>{result.message}</div>
-          {result.stdout && (
-            <details open>
-              <summary style={{ cursor: 'pointer', marginTop: 8, fontWeight: 600 }}>📄 stdout</summary>
-              <pre style={{ 
-                whiteSpace: 'pre-wrap', 
-                backgroundColor: '#f5f5f5', 
-                padding: '12px', 
-                borderRadius: '6px', 
-                border: '1px solid #ddd',
-                maxHeight: '400px',
-                overflowY: 'auto',
-                fontSize: '13px',
-                lineHeight: '1.4',
-                fontFamily: 'monospace'
-              }}>{result.stdout}</pre>
-            </details>
-          )}
-          {result.stderr && (
-            <details>
-              <summary style={{ cursor: 'pointer', marginTop: 8, fontWeight: 600 }}>⚠️ stderr</summary>
-              <pre style={{ 
-                whiteSpace: 'pre-wrap', 
-                color: 'crimson',
-                backgroundColor: '#ffeaea', 
-                padding: '12px', 
-                borderRadius: '6px', 
-                border: '1px solid #ffcccc',
-                maxHeight: '200px',
-                overflowY: 'auto',
-                fontSize: '13px',
-                lineHeight: '1.4',
-                fontFamily: 'monospace'
-              }}>{result.stderr}</pre>
-            </details>
+          {/* Download links */}
+          {result.ok && (
+            <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              {result.pdfAvailable && (
+                <a
+                  href="/api/unique-resume?file=CV_Liam_Power.pdf"
+                  download
+                  style={{
+                    padding: '8px 12px',
+                    background: '#0a7',
+                    color: '#fff',
+                    borderRadius: 6,
+                    textDecoration: 'none',
+                  }}
+                >
+                  Download CV_Liam_Power.pdf
+                </a>
+              )}
+              {result.texAvailable && (
+                <a
+                  href="/api/unique-resume?file=Output_CV.tex"
+                  download
+                  style={{
+                    padding: '8px 12px',
+                    background: '#555',
+                    color: '#fff',
+                    borderRadius: 6,
+                    textDecoration: 'none',
+                  }}
+                >
+                  Download Output_CV.tex
+                </a>
+              )}
+              <span style={{ color: '#666' }}>Debug logs in console.</span>
+            </div>
           )}
         </div>
       )}

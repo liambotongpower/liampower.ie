@@ -15,6 +15,8 @@ export type RunResult = {
   message: string
   stdout?: string
   stderr?: string
+  pdfAvailable?: boolean
+  texAvailable?: boolean
 }
 
 export async function processJobPostingAction(formData: FormData): Promise<RunResult> {
@@ -131,7 +133,37 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
       console.log('✅ DEBUG: Script completed successfully')
       console.log('📄 DEBUG: Script stdout:', stdout)
       if (stderr) console.log('⚠️ DEBUG: Script stderr:', stderr)
-      return { ok: true, message: 'Processed successfully.', stdout, stderr }
+      // Attempt to compile PDF from Output_CV.tex
+      let pdfAvailable = false
+      let compileTried = false
+      const compileCandidates = ['pdflatex', 'xelatex', 'lualatex']
+      for (const bin of compileCandidates) {
+        try {
+          compileTried = true
+          console.log('🔧 DEBUG: Trying LaTeX compiler:', bin)
+          const { stdout: cOut, stderr: cErr } = await execFileAsync(
+            bin,
+            ['-interaction=nonstopmode', '-halt-on-error', '-jobname=CV_Liam_Power', 'Output_CV.tex'],
+            { cwd: UNIQUE_RESUME_DIR, env: process.env }
+          )
+          console.log('🖨️ DEBUG: LaTeX compile stdout:', cOut)
+          if (cErr) console.log('🖨️ DEBUG: LaTeX compile stderr:', cErr)
+          pdfAvailable = true
+          break
+        } catch (e: any) {
+          console.log('⚠️ DEBUG: LaTeX compile failed with', bin, e?.message)
+          continue
+        }
+      }
+
+      return { 
+        ok: true, 
+        message: 'Processed successfully.', 
+        stdout, 
+        stderr,
+        pdfAvailable,
+        texAvailable: true
+      }
     } catch (err: any) {
       console.log('❌ DEBUG: Script execution failed:', err.message)
       console.log('📄 DEBUG: Script stdout:', err.stdout)

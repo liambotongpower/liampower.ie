@@ -18,6 +18,8 @@ class CVSummaryGenerator:
         """Initialize the CV Summary Generator."""
         self.setup_environment()
         self.setup_gemini()
+        # Fixed closing phrase to always end the professional summary with
+        self.closing_phrase = "Visit liampower.ie for more."
     
     def setup_environment(self):
         """Load environment variables from .env file."""
@@ -234,20 +236,52 @@ class CVSummaryGenerator:
         sanitized = re.sub(r"\s+", " ", sanitized).strip()
         return sanitized
 
-    def validate_word_count(self, text, max_words=90):
-        """Validate and adjust word count if necessary."""
-        words = text.split()
-        word_count = len(words)
-        
-        if word_count <= max_words:
-            print(f"✅ Professional summary: {word_count} words (within limit)")
+    def _ends_with_closing_phrase(self, text: str) -> bool:
+        """Check if text already ends with the required closing phrase (case-insensitive, ignore trailing spaces)."""
+        return text.rstrip().lower().endswith(self.closing_phrase.lower())
+
+    def enforce_closing_phrase_within_limit(self, text: str, max_words: int = 90) -> str:
+        """Ensure the text ends with the fixed closing phrase and fits within max_words.
+
+        If necessary, truncate the main text to reserve space for the closing phrase.
+        """
+        if not isinstance(text, str):
             return text
-        else:
-            print(f"⚠️  Professional summary: {word_count} words (exceeds {max_words} word limit)")
-            # Truncate to fit word limit
-            truncated = ' '.join(words[:max_words])
-            print(f"✅ Truncated to: {len(truncated.split())} words")
-            return truncated
+
+        main_text = text.strip()
+        phrase = self.closing_phrase
+
+        # If it already ends with the phrase, just ensure max words by trimming from the front if needed
+        if self._ends_with_closing_phrase(main_text):
+            words = main_text.split()
+            if len(words) <= max_words:
+                print(f"✅ Professional summary: {len(words)} words (within limit, closing phrase present)")
+                return main_text
+            # Keep the closing phrase intact; trim from the start of the body
+            phrase_word_count = len(phrase.split())
+            keep_count = max(max_words - phrase_word_count, 0)
+            # Extract the non-phrase body words
+            body_words = words[:-phrase_word_count]
+            truncated_body = ' '.join(body_words[:keep_count])
+            # In rare case keep_count is 0, just return the phrase
+            final = (truncated_body + (' ' if truncated_body else '') + phrase).strip()
+            print(f"✅ Truncated to: {len(final.split())} words (closing phrase preserved)")
+            return final
+
+        # Otherwise, append the phrase, but reserve space
+        words = main_text.split()
+        phrase_word_count = len(phrase.split())
+        if len(words) + phrase_word_count <= max_words:
+            final = (main_text + (' ' if not main_text.endswith(' ') else '') + phrase).strip()
+            print(f"✅ Appended closing phrase: {len(final.split())} words (within limit)")
+            return final
+
+        # Need to truncate the body to make room for the phrase
+        keep_count = max(max_words - phrase_word_count, 0)
+        truncated_body = ' '.join(words[:keep_count])
+        final = (truncated_body + (' ' if truncated_body else '') + phrase).strip()
+        print(f"✅ Truncated and appended closing phrase: {len(final.split())} words")
+        return final
     
     def insert_summary_into_cv(self, cv_content: str, professional_summary: str) -> str:
         r"""Replace the content of the PROFESSIONAL SUMMARY section with new text.
@@ -261,9 +295,9 @@ class CVSummaryGenerator:
 
         # Pattern with DOTALL to capture across newlines
         block_pattern = (
-            r"(\\section\{PROFESSIONAL SUMMARY\}\s*\n)"  # group 1: header+newline(s)
-            r"([\s\S]*?)"                                  # group 2: existing content (non-greedy)
-            r"(?=\n\\section\{|\n\\end\{document\})"     # stop at next section or end document
+            r"(\\section\{PROFESSIONAL SUMMARY\}[^\n]*\n)"  # group 1: header line (tolerate trailing spaces)
+            r"([\s\S]*?)"                                       # group 2: existing content (non-greedy)
+            r"(?=\s*\\section\{|\\end\{document\})"         # stop at next section (allow leading spaces) or end
         )
 
         match = re.search(block_pattern, cv_content, re.DOTALL)
@@ -315,8 +349,8 @@ class CVSummaryGenerator:
             cv_content, job_requirements, embellishment_level
         )
         
-        # Validate word count
-        professional_summary = self.validate_word_count(professional_summary)
+        # Enforce closing phrase and word limit together
+        professional_summary = self.enforce_closing_phrase_within_limit(professional_summary)
         
         # Insert into CV
         print("\n📝 Updating CV...")
