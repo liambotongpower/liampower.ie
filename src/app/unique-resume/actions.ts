@@ -2,13 +2,45 @@
 
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { writeFile } from 'node:fs/promises'
+import { writeFile, mkdir, copyFile, access } from 'node:fs/promises'
 import path from 'node:path'
+import { constants as fsConstants } from 'node:fs'
 
 const execFileAsync = promisify(execFile)
 
-const UNIQUE_RESUME_DIR = '/Users/liambpower/Developer/liampower.ie/src/app/unique-resume'
-const JOB_POSTING_PATH = path.join(UNIQUE_RESUME_DIR, 'job_posting.txt')
+// Determine where to run the Python workflow:
+// - Locally: use the project directory so files are side-by-side
+// - On Vercel: use /tmp which is the only writable location at runtime
+const PROJECT_UNIQUE_RESUME_DIR = path.join(process.cwd(), 'src', 'app', 'unique-resume')
+const RUNTIME_DIR = process.env.VERCEL ? path.join('/tmp', 'unique-resume') : PROJECT_UNIQUE_RESUME_DIR
+const JOB_POSTING_PATH = path.join(RUNTIME_DIR, 'job_posting.txt')
+
+async function ensureRuntimeDirReady(): Promise<void> {
+  // Ensure runtime directory exists
+  await mkdir(RUNTIME_DIR, { recursive: true })
+
+  // On Vercel, copy required source files from the read-only project dir to /tmp once per cold start
+  if (process.env.VERCEL) {
+    const requiredFiles = [
+      'main.py',
+      'requirements.txt',
+      'Input_CV.tex'
+    ]
+
+    await Promise.all(
+      requiredFiles.map(async (filename) => {
+        const src = path.join(PROJECT_UNIQUE_RESUME_DIR, filename)
+        const dest = path.join(RUNTIME_DIR, filename)
+        try {
+          await access(dest, fsConstants.F_OK)
+          // already copied for this instance
+        } catch {
+          await copyFile(src, dest)
+        }
+      })
+    )
+  }
+}
 
 export type RunResult = {
   ok: boolean
@@ -30,6 +62,9 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
       return { ok: false, message: 'Please paste the job posting text.' }
     }
 
+    console.log('🔍 DEBUG: Preparing runtime directory...')
+    await ensureRuntimeDirReady()
+
     console.log('🔍 DEBUG: Writing job posting to file...')
     await writeFile(JOB_POSTING_PATH, text, { encoding: 'utf8' })
     console.log('✅ DEBUG: Job posting written successfully')
@@ -37,7 +72,7 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
     // Check Python version and environment
     console.log('🔍 DEBUG: Checking Python environment...')
     try {
-      const { stdout: pythonVersion } = await execFileAsync('python3', ['--version'], { cwd: UNIQUE_RESUME_DIR })
+      const { stdout: pythonVersion } = await execFileAsync('python3', ['--version'], { cwd: RUNTIME_DIR })
       console.log('🐍 DEBUG: Python version:', pythonVersion.trim())
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
@@ -47,7 +82,7 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
 
     // Check if pip is available
     try {
-      const { stdout: pipVersion } = await execFileAsync('python3', ['-m', 'pip', '--version'], { cwd: UNIQUE_RESUME_DIR })
+      const { stdout: pipVersion } = await execFileAsync('python3', ['-m', 'pip', '--version'], { cwd: RUNTIME_DIR })
       console.log('📦 DEBUG: Pip version:', pipVersion.trim())
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
@@ -57,7 +92,7 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
 
     // Check if virtual environment exists, create if not
     console.log('🔍 DEBUG: Checking for virtual environment...')
-    const venvPath = path.join(UNIQUE_RESUME_DIR, 'venv')
+    const venvPath = path.join(RUNTIME_DIR, 'venv')
     const venvPython = path.join(venvPath, 'bin', 'python3')
     
     try {
@@ -66,7 +101,7 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
     } catch {
       console.log('🔍 DEBUG: Creating virtual environment...')
       try {
-        await execFileAsync('python3', ['-m', 'venv', 'venv'], { cwd: UNIQUE_RESUME_DIR })
+        await execFileAsync('python3', ['-m', 'venv', 'venv'], { cwd: RUNTIME_DIR })
         console.log('✅ DEBUG: Virtual environment created')
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err)
@@ -81,7 +116,7 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
       const { stdout: installStdout, stderr: installStderr } = await execFileAsync(
         venvPython, 
         ['-m', 'pip', 'install', '--disable-pip-version-check', '--no-input', '-r', 'requirements.txt'], 
-        { cwd: UNIQUE_RESUME_DIR, env: process.env }
+        { cwd: RUNTIME_DIR, env: process.env }
       )
       console.log('📦 DEBUG: Install stdout:', installStdout)
       if (installStderr) console.log('📦 DEBUG: Install stderr:', installStderr)
@@ -116,7 +151,7 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
       const { stdout: importTest } = await execFileAsync(
         venvPython,
         ['-c', 'import google.generativeai as genai; import dotenv; print("Imports successful")'],
-        { cwd: UNIQUE_RESUME_DIR, env: process.env }
+        { cwd: RUNTIME_DIR, env: process.env }
       )
       console.log('✅ DEBUG: Import test successful:', importTest.trim())
     } catch (err: unknown) {
@@ -139,7 +174,7 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
       const { stdout, stderr } = await execFileAsync(
         venvPython,
         ['main.py', 'job_posting.txt', '-e', String(embellishment)],
-        { cwd: UNIQUE_RESUME_DIR, env: process.env }
+        { cwd: RUNTIME_DIR, env: process.env }
       )
       console.log('✅ DEBUG: Script completed successfully')
       console.log('📄 DEBUG: Script stdout:', stdout)
@@ -153,7 +188,7 @@ export async function processJobPostingAction(formData: FormData): Promise<RunRe
           const { stdout: cOut, stderr: cErr } = await execFileAsync(
             bin,
             ['-interaction=nonstopmode', '-halt-on-error', '-jobname=CV_Liam_Power', 'Output_CV.tex'],
-            { cwd: UNIQUE_RESUME_DIR, env: process.env }
+            { cwd: RUNTIME_DIR, env: process.env }
           )
           console.log('🖨️ DEBUG: LaTeX compile stdout:', cOut)
           if (cErr) console.log('🖨️ DEBUG: LaTeX compile stderr:', cErr)
