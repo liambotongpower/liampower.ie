@@ -1,73 +1,58 @@
-We are seeking exceptional Software Engineering interns to join Naptha AI and contribute to building the future of AI agent infrastructure. This internship offers hands-on experience working with frontier AI technology, backed by industry veterans and technical leaders through NVIDIA Inception, Google for Startups, and Microsoft for Startups.
+verview
 
-We're building the foundational infrastructure for the next wave of AI companies, enabling frontier AI developers to build products powered by enormous networks of highly capable next-generation AI agents. As an Engineering Intern, you'll work directly with our technical team on real projects that impact our core platform.
+Susquehanna is one of the world’s largest market makers, with a unique approach to technology, trading, and research. While this background puts us at the top of our game, what really makes us successful is our cutting-edge technology, collaboration between our technologists and traders, and our decision making. 
 
-What You'll Do
+  
 
-    Build and improve components of our agent infrastructure
+As a Software Development Summer Intern at Susquehanna, you will be working with senior technologists from the beginning of your programme who will act as your mentors throughout. Your internship programme will allow you to get involved with the development teams building cutting-edge technologies throughout your ten weeks with us. 
 
-    Work on real features that ship to production
+  
 
-    Collaborate with experienced engineers and researchers
+You will be working with Software Developers who have a constant focus on evolving a stable, scalable, optimized environment with minimized risk. Our growing team of analysts, developers, infrastructure engineers and support specialists design, deliver and optimize industry leading technical solutions that can process large amounts of data, ensuring high performance and stability. 
+What we’re looking for
 
-    Learn about large-scale AI systems and infrastructure
+Who you are: 
 
-    Contribute to our agent development platform
+  
 
-    Gain experience with cutting-edge AI tools and frameworks
+Technical: You have strong software development skills in any object-oriented language (we use C#, C++ & Python mostly). You also understand algorithms, data structures, and object-oriented design patterns. 
 
-Technical Areas
+  
 
-    Backend development with Python and modern frameworks
+Problem Solver: When it comes to solving problems, you use clear and sound reasoning. You’re rational and like to use numbers and data to come up with sensible solutions. 
 
-    Agent system implementation and testing
+  
 
-    API development and integration
+Curious: You’re eager to learn and develop new technologies. You’re inquisitive and creative, questioning the status quo. 
 
-    Performance optimization and monitoring
+  
 
-    Infrastructure and tooling development
+Communicator: You enjoy building relationships with those you work closely with. You enjoy sharing ideas, expressing your thoughts, and listening to the views of others. 
 
-    Testing and deployment automation
+  
 
-Requirements
+Ambitious: You constantly set yourself goals in life and give your all to achieve them. You’re not afraid to put in the effort to reach your full potential. 
 
-    Currently pursuing BS/MS in Computer Science or related field
+ 
 
-    Strong programming skills, particularly in Python
+ 
 
-    Basic understanding of AI/ML concepts
+What’s in it for you: 
 
-    Experience with software development practices
+  
 
-    Ability to work independently and learn quickly
+Education: We are renowned for our market-leading education and training programmes. During your ten-week internship with us, you will take part in a structured program, composed of trading education, shadowing opportunities, coding challenges, projects and workshops. Getting a “big picture” perspective of our technology is important. You will also join industry lectures to understand trading and delve deeper into the crucial role that technologists play in Susquehanna.  
 
-    Strong problem-solving abilities
+  
 
-Nice to Have
+Real Impact: Through a combination of hands-on and classroom discussion, you will learn how we solve the real technical challenges of building and maintaining the best trading systems. You will learn about our use of leading-edge hardware and software technologies. With other developers and traders, you will collaborate on live challenges, improvements, and technical issues which are key to the ongoing success of the business. 
 
-    Experience with AI frameworks or tools
+  
 
-    Familiarity with distributed systems
+Culture: Our non-hierarchical culture allows employees of every level to thrive. We are not your typical trading firm – the environment is casual, collaborative and we focus on continuous development, no matter how long you’ve been in Susquehanna. 
 
-    Open source contributions
+  
 
-    Experience with developer tools
+Perks: Based in the heart of Ireland’s Financial Services Centre, and a 10-minute walk from Dublin’s city centre, our employees avail of free onsite catering, a games room, and a large in house gym, to name but a few of our favourite perks. You will have the opportunity to attend multiple social events hosted by Susquehanna, where you will get the opportunity to meet recent graduates, and senior leaders from across the business. The interns have a social activity every week! 
 
-    Interest in AI infrastructure
-
-About the internship
-
-    Duration: 12-16 weeks
-
-    Location: Remote
-
-    Competitive compensation
-
-    Real-world project ownership
-
-    Mentorship from experienced engineers
-
-    Opportunity for return offers
-
-This internship offers a unique opportunity to work on cutting-edge AI infrastructure while learning from experienced technical leaders. You'll gain practical experience building systems that power the next generation of AI applications.
+ 
