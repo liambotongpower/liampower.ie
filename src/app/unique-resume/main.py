@@ -46,8 +46,64 @@ class CVSummaryGenerator:
         try:
             genai.configure(api_key=self.api_key)
             print("✅ DEBUG: Gemini API configured")
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
-            print("✅ DEBUG: Gemini model initialized")
+            # Prefer latest stable, widely-available models first
+            preferred_models = [
+                'gemini-2.5-pro',
+                'gemini-2.5-flash',
+                'gemini-pro-latest',
+                'gemini-flash-latest',
+                'gemini-1.5-pro',
+                'gemini-1.5-flash-8b',
+                'gemini-1.5-flash',
+                'gemini-1.0-pro',
+            ]
+
+            available_models = []
+            try:
+                available_models = [
+                    m.name for m in genai.list_models() if getattr(m, 'supported_generation_methods', None) and 'generateContent' in m.supported_generation_methods
+                ]
+                print(f"✅ DEBUG: ListModels returned {len(available_models)} models supporting generateContent")
+                for m in available_models[:10]:
+                    print(f"   • {m}")
+            except Exception as lm_err:
+                print(f"⚠️  DEBUG: ListModels failed: {lm_err}. Will attempt known model names directly.")
+
+            chosen_name = None
+            for name in preferred_models:
+                # If we have a list, require presence; otherwise attempt optimistically
+                if available_models and f"models/{name}" not in available_models:
+                    continue
+                try:
+                    test_model = genai.GenerativeModel(name)
+                    # quick dry-run with a trivial prompt to validate the endpoint, but do not block on errors
+                    try:
+                        _ = test_model.count_tokens("ping")
+                    except Exception:
+                        pass
+                    chosen_name = name
+                    self.model = test_model
+                    break
+                except Exception as m_err:
+                    print(f"⚠️  DEBUG: Model {name} init failed: {m_err}")
+
+            if not hasattr(self, 'model'):
+                # If we have available models, try the first generateContent-capable one
+                for full in available_models:
+                    # Expect names like 'models/gemini-2.5-pro'
+                    name = full.split('models/', 1)[-1]
+                    try:
+                        self.model = genai.GenerativeModel(name)
+                        chosen_name = name
+                        break
+                    except Exception:
+                        continue
+            if not hasattr(self, 'model'):
+                # Final attempt: use gemini-2.5-pro as default
+                chosen_name = 'gemini-2.5-pro'
+                self.model = genai.GenerativeModel(chosen_name)
+
+            print(f"✅ DEBUG: Gemini model initialized: {chosen_name}")
             print("✅ Gemini API configured successfully")
         except Exception as e:
             print(f"❌ Error configuring Gemini API: {e}")
